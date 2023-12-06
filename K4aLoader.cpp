@@ -1,69 +1,21 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License.
+﻿#include "k4aLoader.h"
+#include "k4aplugin.h"
+#include "dynlib.h"
+#include <stdio.h>
 
-#include "K4aLoader.h"
-
-static void deloader_init_once(deloader_global_context_t *global);
-static void deloader_deinit(void);
-
-// Creates a function called deloader_global_context_t_get() which returns the initialized
-// singleton global
-K4A_DECLARE_GLOBAL(deloader_global_context_t, deloader_init_once);
-
-// Load Depth Engine
-static void deloader_init_once(deloader_global_context_t *global)
+typedef struct
 {
-    // All members are initialized to zero
+    dynlib_t orbbec_handle;
+    dynlib_t handle; // k4a
+} deloader_context_t;
 
-    ////k4a_result_t result = dynlib_create(K4A_PLUGIN_DYNAMIC_LIBRARY_NAME, K4A_PLUGIN_VERSION, &global->handle);
-    // if (K4A_FAILED(result))
-    //{
-    //     //LOG_ERROR("Failed to Load Depth Engine Plugin (%s). Depth functionality will not work",
-    //     //    K4A_PLUGIN_DYNAMIC_LIBRARY_NAME);
-    //     //LOG_ERROR("Make sure the depth engine plugin is in your loaders path", 0);
-    // }
-
-    // if (K4A_SUCCEEDED(result))
-    //{
-    //     result = dynlib_find_symbol(global->handle, K4A_PLUGIN_EXPORTED_FUNCTION, (void**)&global->registerFn);
-    // }
-
-    // if (K4A_SUCCEEDED(result))
-    //{
-    //     //result = K4A_RESULT_FROM_BOOL(global->registerFn(&global->plugin));
-    //     global->registerFn(&global->plugin);
-    // }
-
-    // if (K4A_SUCCEEDED(result))
-    //{
-    //     //result = K4A_RESULT_FROM_BOOL(verify_plugin(&global->plugin));
-    // }
-
-    // if (K4A_SUCCEEDED(result))
-    //{
-    //     global->loaded = true;
-    // }
-}
-
-static bool is_plugin_loaded(deloader_global_context_t *global)
+OB_EXTENSION_API instance_t k4a_load(const char* dll)
 {
-    return global->loaded;
-}
-
-void deloader_deinit(void)
-{
-    deloader_global_context_t *global = deloader_global_context_t_get();
-
-    if (global->handle)
-    {
-        dynlib_destroy(global->handle);
-    }
-}
-
-K4aLoader::K4aLoader(std::string dll, deloader_global_context_t *global)
-{
+    deloader_context_t *ctx = new(deloader_context_t);
+    instance_t instance;
     printf("Start loading dynamic libraries.\n");
-    k4a_result_t result = dynlib_create(dll.c_str(), &global->handle);
+
+    k4a_result_t result = dynlib_create(dll, &ctx->handle, &ctx->orbbec_handle);
     if (K4A_SUCCEEDED(result))
     {
         printf("Dynamic library loaded.\n");
@@ -72,26 +24,28 @@ K4aLoader::K4aLoader(std::string dll, deloader_global_context_t *global)
     {
         printf("Dynamic library loading failure.\n");
     }
+    instance.context = (void*)ctx;
 
     printf("Start initializing function pointers.\n");
     if (K4A_SUCCEEDED(result))
     {
-        result = dynlib_find_symbol(global->handle, "k4a_device_get_installed_count", (void **)&functionList.k4a_device_get_installed_count);
+        dynlib_t hdl = ((deloader_context_t*)instance.context)->handle;
+        result = dynlib_find_symbol(hdl, "k4a_device_get_installed_count", (void **)&instance.k4a_device_get_installed_count);
         if (K4A_FAILED(result))
         {
             printf("k4a_device_get_installed_count function failed to load.\n");
         }
-        result = dynlib_find_symbol(global->handle, "k4a_device_get_calibration", (void **)&functionList.k4a_device_get_calibration);
+        result = dynlib_find_symbol(hdl, "k4a_device_get_calibration", (void **)&instance.k4a_device_get_calibration);
         if (K4A_FAILED(result))
         {
             printf("k4a_device_get_calibration function failed to load.\n");
         }
-        result = dynlib_find_symbol(global->handle, "k4a_device_open", (void **)&functionList.k4a_device_open);
+        result = dynlib_find_symbol(hdl, "k4a_device_open", (void **)&instance.k4a_device_open);
         if (K4A_FAILED(result))
         {
             printf("k4a_device_open function failed to load.\n");
         }
-        result = dynlib_find_symbol(global->handle, "k4a_device_close", (void **)&functionList.k4a_device_close);
+        result = dynlib_find_symbol(hdl, "k4a_device_close", (void **)&instance.k4a_device_close);
         if (K4A_FAILED(result))
         {
             printf("k4a_device_close function failed to load.\n");
@@ -101,11 +55,18 @@ K4aLoader::K4aLoader(std::string dll, deloader_global_context_t *global)
 
     if (K4A_SUCCEEDED(result))
     {
-        global->loaded = true;
+        instance.loaded = true;
     }
+
+    return instance;
 }
 
-K4aLoader::~K4aLoader()
+OB_EXTENSION_API void free_instance(instance_t instance)
 {
-    deloader_deinit();
+    if (instance.context)
+    {
+        dynlib_destroy(((deloader_context_t*)instance.context)->handle, ((deloader_context_t*)instance.context)->orbbec_handle);
+        delete instance.context;
+        instance.context = nullptr;
+    }
 }

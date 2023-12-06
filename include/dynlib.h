@@ -55,7 +55,7 @@ K4A_DECLARE_HANDLE(dynlib_t);
  * otherwise
  */
 //k4a_result_t dynlib_create(const char* name, uint32_t version, dynlib_t* dynlib_handle);
-k4a_result_t dynlib_create(const char *name, dynlib_t *dynlib_handle);
+k4a_result_t dynlib_create(const char *name, dynlib_t *dynlib_handle, dynlib_t* dynlib_orbbec_handle);
 
 /** Finds the address of an exported symbol in a loaded dynamic library
  *
@@ -81,7 +81,7 @@ k4a_result_t dynlib_find_symbol(dynlib_t dynlib_handle, const char *symbol, void
  * Dynamic library to unload. This handle is no longer valid after this function
  * call
  */
-void dynlib_destroy(dynlib_t dynlib_handle);
+void dynlib_destroy(dynlib_t dynlib_handle, dynlib_t dynlib_orbbec_handle);
 
 #ifdef __cplusplus
 }
