@@ -67,7 +67,7 @@ static char* generate_file_k4a_name(const char* name) {
 }
 
 //k4a_result_t dynlib_create(const char *name, uint32_t version, dynlib_t *dynlib_handle) {
-k4a_result_t dynlib_create(const char *name, dynlib_t *dynlib_handle) {
+k4a_result_t dynlib_create(const char *name, dynlib_t *dynlib_handle, dynlib_t* dynlib_orbbec_handle) {
     if (name == NULL)
     {
         printf("dll folder path is empty.\n");
@@ -83,10 +83,13 @@ k4a_result_t dynlib_create(const char *name, dynlib_t *dynlib_handle) {
     dynlib_context_t *dynlib = dynlib_t_create(dynlib_handle);
     k4a_result_t      result = K4A_RESULT_FROM_BOOL(dynlib != NULL);
 
+    dynlib_context_t* dynlib_orbbec = dynlib_t_create(dynlib_orbbec_handle);
+    result = K4A_RESULT_FROM_BOOL(dynlib != NULL);
+
     if(K4A_SUCCEEDED(result)) {
-        HMODULE hanlde = LoadLibraryA(versioned_orbbec_name, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_USER_DIRS);
-        result         = (hanlde != NULL) ? K4A_RESULT_SUCCEEDED : K4A_RESULT_FAILED;
-        if (hanlde){
+        dynlib_orbbec->handle = LoadLibraryA(versioned_orbbec_name, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_USER_DIRS);
+        result         = (dynlib_orbbec->handle != NULL) ? K4A_RESULT_SUCCEEDED : K4A_RESULT_FAILED;
+        if (K4A_SUCCEEDED(result)){
             dynlib->handle = LoadLibraryA(versioned_k4a_name, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_USER_DIRS);
             result = (dynlib->handle != NULL) ? K4A_RESULT_SUCCEEDED : K4A_RESULT_FAILED;
         }
@@ -105,6 +108,8 @@ k4a_result_t dynlib_create(const char *name, dynlib_t *dynlib_handle) {
     }
 
     if(K4A_FAILED(result)) {
+        dynlib_t_destroy(*dynlib_orbbec_handle);
+        *dynlib_orbbec_handle = NULL;
         dynlib_t_destroy(*dynlib_handle);
         *dynlib_handle = NULL;
     }
@@ -130,14 +135,23 @@ k4a_result_t dynlib_find_symbol(dynlib_t dynlib_handle, const char *symbol, void
     return result;
 }
 
-void dynlib_destroy(dynlib_t dynlib_handle) {
-    // RETURN_VALUE_IF_HANDLE_INVALID(VOID_VALUE, dynlib_t, dynlib_handle);
+void dynlib_destroy(dynlib_t dynlib_handle, dynlib_t dynlib_orbbec_handle) {
+    //orbbecsdk
+    dynlib_context_t* dynlib_orbbec = dynlib_t_get_context(dynlib_orbbec_handle);
 
+    BOOL freed = FreeLibrary(dynlib_orbbec->handle);
+    if (!freed) {
+        printf("Failed to unload dynamic orbbec library.\n");
+    }
+
+    dynlib_t_destroy(dynlib_orbbec_handle);
+    dynlib_orbbec = NULL;
+    //k4a
     dynlib_context_t *dynlib = dynlib_t_get_context(dynlib_handle);
 
-    BOOL freed = FreeLibrary(dynlib->handle);
+    freed = FreeLibrary(dynlib->handle);
     if(!freed) {
-        // LOG_ERROR("Failed to unload dynamic library");
+        printf("Failed to unload dynamic k4a library.\n");
     }
 
     dynlib_t_destroy(dynlib_handle);

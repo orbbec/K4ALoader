@@ -1,11 +1,7 @@
 cmake_minimum_required(VERSION 3.1.15)
-project(k4aLoader)
+project(BuildDll)
 
 set(CMAKE_CXX_STANDARD 11)
-
-add_executable(${PROJECT_NAME}
-    main.cpp
-)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
@@ -31,18 +27,22 @@ set(common_sources
     K4aLoader.cpp
 )
 
-target_sources(${PROJECT_NAME} PRIVATE
+add_library(k4aLoader SHARED
     ${common_sources}
     ${platform_sources}
 )
 
 if(WIN32)
-    target_link_libraries(${PROJECT_NAME}
+    target_link_libraries(k4aLoader
         kernel32
     )
 else()
-    target_link_libraries(${PROJECT_NAME}
+    target_link_libraries(k4aLoader
         pthread
         dl
     )
 endif()
+
+install(TARGETS k4aLoader DESTINATION ${CMAKE_BINARY_DIR}/install/lib)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/K4aLoader.h DESTINATION ${CMAKE_BINARY_DIR}/install/include)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/k4atypes.h DESTINATION ${CMAKE_BINARY_DIR}/install/include)
