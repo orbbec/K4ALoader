@@ -19,9 +19,12 @@ typedef struct
 typedef struct _fun_instance_
 {
     uint32_t     (*k4a_device_get_installed_count)(void);
-    //k4a_result_t (*k4a_set_debug_message_handler)(k4a_logging_message_cb_t* message_cb, void* message_cb_context, k4a_log_level_t min_level);
-    //k4a_result_t (*k4a_set_allocator)(k4a_memory_allocate_cb_t allocate, k4a_memory_destroy_cb_t free);
-    //k4a_result_t (*k4a_device_open)(uint32_t index, k4a_device_t* device_handle);
+    k4a_result_t (*k4a_device_open)(uint32_t index, k4a_device_t* device_handle);
+    void (*k4a_device_close)(k4a_device_t device_handle);
+    k4a_result_t (*k4a_device_get_calibration)(k4a_device_t device_handle,
+        const k4a_depth_mode_t depth_mode,
+        const k4a_color_resolution_t color_resolution,
+        k4a_calibration_t* calibration);
     //k4a_result_t (*k4a_device_close)(uint32_t index, k4a_device_t* device_handle);
     //k4a_result_t (*k4a_device_get_version)(k4a_device_t device_handle, k4a_hardware_version_t* version);
 
