@@ -28,7 +28,7 @@ set(common_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/include/k4atypes.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/K4aLoader.h
     global.c
-    K4aLoader.cpp 
+    K4aLoader.cpp
 )
 
 target_sources(${PROJECT_NAME} PRIVATE
@@ -39,5 +39,10 @@ target_sources(${PROJECT_NAME} PRIVATE
 if(WIN32)
     target_link_libraries(${PROJECT_NAME}
         kernel32
+    )
+else()
+    target_link_libraries(${PROJECT_NAME}
+        pthread
+        dl
     )
 endif()
