@@ -21,7 +21,7 @@ set(common_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/include/handle.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/dynlib.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/k4aLoader.h
-    K4aLoader.cpp
+    k4aLoader.cpp
 )
 
 add_library(k4aLoader SHARED
@@ -42,5 +42,5 @@ else()
 endif()
 
 install(TARGETS k4aLoader DESTINATION ${CMAKE_BINARY_DIR}/install/lib)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/K4aLoader.h DESTINATION ${CMAKE_BINARY_DIR}/install/include)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/k4aLoader.h DESTINATION ${CMAKE_BINARY_DIR}/install/include)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/k4atypes.h DESTINATION ${CMAKE_BINARY_DIR}/install/include)
