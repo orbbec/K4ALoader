@@ -33,11 +33,11 @@ add_library(k4aLoader SHARED
 )
 
 if(WIN32)
-    target_link_libraries(k4aLoader
+    target_link_libraries(k4aLoader 
         kernel32
     )
 else()
-    target_link_libraries(k4aLoader
+    target_link_libraries(k4aLoader 
         pthread
         dl
     )
