@@ -93,10 +93,10 @@ k4a_result_t dynlib_create(const char *name, dynlib_t *dynlib_handle, dynlib_t* 
 
     if (K4A_SUCCEEDED(result))
     {
-        dynlib_orbbec->handle = LoadLibraryA(versioned_orbbec_name, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_USER_DIRS);
-        result         = (dynlib_orbbec->handle != NULL) ? K4A_RESULT_SUCCEEDED : K4A_RESULT_FAILED;
+        dynlib_orbbec->handle = dlopen(versioned_orbbec_name, RTLD_NOW);
+        result = (dynlib->handle != NULL) ? K4A_RESULT_SUCCEEDED : K4A_RESULT_FAILED;
         if (K4A_SUCCEEDED(result)){
-            dynlib->handle = LoadLibraryA(versioned_k4a_name, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_USER_DIRS);
+            dynlib->handle = dlopen(versioned_k4a_name, RTLD_NOW);
             result = (dynlib->handle != NULL) ? K4A_RESULT_SUCCEEDED : K4A_RESULT_FAILED;
         }
         else
