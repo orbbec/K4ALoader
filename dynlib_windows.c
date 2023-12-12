@@ -74,7 +74,7 @@ k4a_result_t dynlib_create(const char *name, dynlib_t *dynlib_handle, dynlib_t* 
         return K4A_RESULT_FAILED;
     }
 
-    char* versioned_orbbec_name = generate_file_orbbec_name(name);
+    char *versioned_orbbec_name = generate_file_orbbec_name(name);
     char *versioned_k4a_name = generate_file_k4a_name(name);
     if(versioned_orbbec_name == NULL && versioned_k4a_name == NULL) {
         return K4A_RESULT_FAILED;
