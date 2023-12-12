@@ -16,14 +16,11 @@ else()
 endif()
 
 set(common_sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/common.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/dynlib.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/global.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/handle.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/k4aplugin.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/k4atypes.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/K4aLoader.h
-    global.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/common.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/handle.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/dynlib.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/k4aLoader.h
     K4aLoader.cpp
 )
 
@@ -31,6 +28,7 @@ add_library(k4aLoader SHARED
     ${common_sources}
     ${platform_sources}
 )
+add_definitions(-DK4ALOADER_EXPORTS)
 
 if(WIN32)
     target_link_libraries(k4aLoader 
