@@ -70,7 +70,7 @@ static char *generate_file_k4a_name(const char *name)
     return versioned_file_name;
 }
 // k4a_result_t dynlib_create(const char *name, uint32_t version, dynlib_t *dynlib_handle) {
-k4a_result_t dynlib_create(const char *name, dynlib_t *dynlib_handle)
+k4a_result_t dynlib_create(const char *name, dynlib_t *dynlib_handle, dynlib_t* dynlib_orbbec_handle)
 {
     if (name == NULL)
     {
@@ -86,39 +86,40 @@ k4a_result_t dynlib_create(const char *name, dynlib_t *dynlib_handle)
     }
 
     dynlib_context_t *dynlib = dynlib_t_create(dynlib_handle);
-    k4a_result_t result = K4A_RESULT_FROM_BOOL(dynlib != NULL);
+    k4a_result_t      result = K4A_RESULT_FROM_BOOL(dynlib != NULL);
+
+    dynlib_context_t* dynlib_orbbec = dynlib_t_create(dynlib_orbbec_handle);
+    result = K4A_RESULT_FROM_BOOL(dynlib != NULL);
 
     if (K4A_SUCCEEDED(result))
     {
-        auto handle = dlopen(versioned_orbbec_name, RTLD_NOW);
-        result = (dynlib->handle != NULL) ? K4A_RESULT_SUCCEEDED : K4A_RESULT_FAILED;
-
-        if (handle)
-        {
-            dynlib->handle = dlopen(versioned_k4a_name, RTLD_NOW);
+        dynlib_orbbec->handle = LoadLibraryA(versioned_orbbec_name, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_USER_DIRS);
+        result         = (dynlib_orbbec->handle != NULL) ? K4A_RESULT_SUCCEEDED : K4A_RESULT_FAILED;
+        if (K4A_SUCCEEDED(result)){
+            dynlib->handle = LoadLibraryA(versioned_k4a_name, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_USER_DIRS);
             result = (dynlib->handle != NULL) ? K4A_RESULT_SUCCEEDED : K4A_RESULT_FAILED;
         }
         else
         {
-            printf("Failed to load shared with error: %s\n", dlerror());
+            printf("Failed to load dll for OrbbecSDK.\n");
         }
     }
 
-    if (versioned_orbbec_name != NULL)
-    {
+    if(versioned_orbbec_name != NULL) {
         free(versioned_orbbec_name);
     }
 
-    if (versioned_k4a_name != NULL)
-    {
+    if (versioned_k4a_name != NULL) {
         free(versioned_k4a_name);
     }
 
-    if (K4A_FAILED(result))
-    {
+    if(K4A_FAILED(result)) {
+        dynlib_t_destroy(*dynlib_orbbec_handle);
+        *dynlib_orbbec_handle = NULL;
         dynlib_t_destroy(*dynlib_handle);
         *dynlib_handle = NULL;
     }
+
     return result;
 }
 
@@ -155,9 +156,16 @@ k4a_result_t dynlib_find_symbol(dynlib_t dynlib_handle, const char *symbol, void
     return result;
 }
 
-void dynlib_destroy(dynlib_t dynlib_handle)
+void dynlib_destroy(dynlib_t dynlib_handle, dynlib_t dynlib_orbbec_handle)
 {
+    //orbbecsdk
+    dynlib_context_t* dynlib_orbbec = dynlib_t_get_context(dynlib_orbbec_handle);
 
+    dlclose(dynlib_orbbec->handle);
+
+    dynlib_t_destroy(dynlib_orbbec_handle);
+    dynlib_orbbec = NULL;
+    //k4a
     dynlib_context_t *dynlib = dynlib_t_get_context(dynlib_handle);
 
     dlclose(dynlib->handle);

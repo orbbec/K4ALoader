@@ -7,63 +7,35 @@
 int main()
 {
 
-    //auto loader = std::make_shared<K4aLoader>("/home/orbbec/Desktop/k4aLoader/K4ALoader-master/lib", &global);
-    //auto loader = std::make_shared<K4aLoader>("D:\\k4aLoader\\k4aLoader\\lib", &global);
+    k4aloader_handle* instance = k4aloader_dll_file_load("D:\\Test\\TestLoad");
 
-    instance_t instance = k4a_load("D:\\k4aLoader\\k4aLoader\\lib");
-    if (instance.loaded)
+    if (instance != NULL)
     {
+        int count = instance->k4a_device_get_installed_count();
 
-        int count = instance.k4a_device_get_installed_count();
-
-        printf("device_count: %d", count);
-        if (count > 0)
-        {
-            k4a_device_t device;
-            if (instance.k4a_device_open(0, &device) != K4A_RESULT_SUCCEEDED)
-            {
-                printf("Failed to open device.\n");
-                return -1;
-            }
-
-            k4a_calibration_t calibration;
-            if (instance.k4a_device_get_calibration(device, K4A_DEPTH_MODE_NFOV_UNBINNED, K4A_COLOR_RESOLUTION_OFF, &calibration) != K4A_RESULT_SUCCEEDED)
-            {
-                printf("Failed to get device calibration.\n");
-                instance.k4a_device_close(device);
-                return -1;
-            }
-
-            k4a_calibration_camera_t camera = calibration.depth_camera_calibration;
-            k4a_calibration_intrinsic_parameters_t intrinsics = camera.intrinsics.parameters;
-
-            printf("Focal Length: %.2f, %.2f\n", intrinsics.param.fx, intrinsics.param.fy);
-
-            instance.k4a_device_close(device);
-        }
-
-        free_instance(instance);
+        printf("device_count: %d\n", count);
+        
+        k4aloader_free_loaded_dll_file(instance);
     }
     else
     {
-        printf("Failed to load this.");
+        printf("Failed to load this.\n");
     }
-
-    return 0;
+    
 }
 
 //#include <Windows.h>
 //#include <iostream>
 //
 //int main() {
-//    // ¶¯Ì¬¿âÂ·¾¶
+//    // ï¿½ï¿½Ì¬ï¿½ï¿½Â·ï¿½ï¿½
 //    const char* libraryPath =
 //        "D:\\k4aLoader\\k4aLoader\\lib\\OrbbecSDK.dll";
 //
 //    const char* libraryPathEx =
 //        "D:\\k4aLoader\\k4aLoader\\lib\\k4a.dll";
 //
-//    // ¼ÓÔØ¶¯Ì¬¿â
+//    // ï¿½ï¿½ï¿½Ø¶ï¿½Ì¬ï¿½ï¿½
 //    HMODULE libraryHandle = LoadLibraryA(libraryPath);
 //    if (!libraryHandle) {
 //        std::cerr << "Failed to load library: " << GetLastError() << std::endl;
@@ -76,7 +48,7 @@ int main()
 //        return 1;
 //    }
 //
-//    // »ñÈ¡º¯ÊýµØÖ·
+//    // ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·
 //    typedef uint32_t(*FunctionType)(void);
 //    FunctionType function = reinterpret_cast<FunctionType>(
 //        GetProcAddress(libraryHandleEx, "k4a_device_get_installed_count"));
@@ -88,12 +60,12 @@ int main()
 //        return 1;
 //    }
 //
-//    //// µ÷ÓÃº¯Êý
+//    //// ï¿½ï¿½ï¿½Ãºï¿½ï¿½ï¿½
 //    int count = function();
 //    std::cout << "==============count:" << count << std::endl;
 //
 //    //function = nullptr;
-//    // ¹Ø±Õ¶¯Ì¬¿â
+//    // ï¿½Ø±Õ¶ï¿½Ì¬ï¿½ï¿½
 //    FreeLibrary(libraryHandle);
 //    FreeLibrary(libraryHandleEx);
 //
