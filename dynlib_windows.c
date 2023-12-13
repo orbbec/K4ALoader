@@ -76,6 +76,7 @@ k4a_result_t dynlib_create(const char *name, dynlib_t *dynlib_handle, dynlib_t* 
 
     char *versioned_orbbec_name = generate_file_orbbec_name(name);
     char *versioned_k4a_name = generate_file_k4a_name(name);
+    printf("dllpath: %s", versioned_k4a_name);
     if(versioned_orbbec_name == NULL && versioned_k4a_name == NULL) {
         return K4A_RESULT_FAILED;
     }
@@ -88,15 +89,9 @@ k4a_result_t dynlib_create(const char *name, dynlib_t *dynlib_handle, dynlib_t* 
 
     if(K4A_SUCCEEDED(result)) {
         dynlib_orbbec->handle = LoadLibraryA(versioned_orbbec_name, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_USER_DIRS);
-        result         = (dynlib_orbbec->handle != NULL) ? K4A_RESULT_SUCCEEDED : K4A_RESULT_FAILED;
-        if (K4A_SUCCEEDED(result)){
-            dynlib->handle = LoadLibraryA(versioned_k4a_name, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_USER_DIRS);
-            result = (dynlib->handle != NULL) ? K4A_RESULT_SUCCEEDED : K4A_RESULT_FAILED;
-        }
-        else
-        {
-            printf("Failed to load dll for OrbbecSDK.\n");
-        }
+
+        dynlib->handle = LoadLibraryA(versioned_k4a_name, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_USER_DIRS);
+        result = (dynlib->handle != NULL) ? K4A_RESULT_SUCCEEDED : K4A_RESULT_FAILED;
     }
 
     if(versioned_orbbec_name != NULL) {
@@ -112,6 +107,7 @@ k4a_result_t dynlib_create(const char *name, dynlib_t *dynlib_handle, dynlib_t* 
         *dynlib_orbbec_handle = NULL;
         dynlib_t_destroy(*dynlib_handle);
         *dynlib_handle = NULL;
+        printf("Failed to load dll.\n");
     }
 
     return result;
@@ -136,24 +132,31 @@ k4a_result_t dynlib_find_symbol(dynlib_t dynlib_handle, const char *symbol, void
 }
 
 void dynlib_destroy(dynlib_t dynlib_handle, dynlib_t dynlib_orbbec_handle) {
-    //orbbecsdk
-    dynlib_context_t* dynlib_orbbec = dynlib_t_get_context(dynlib_orbbec_handle);
+    // orbbecsdk
+    if (dynlib_orbbec_handle)
+    {
+        dynlib_context_t* dynlib_orbbec = dynlib_t_get_context(dynlib_orbbec_handle);
 
-    BOOL freed = FreeLibrary(dynlib_orbbec->handle);
-    if (!freed) {
-        printf("Failed to unload dynamic orbbec library.\n");
+        BOOL freed = FreeLibrary(dynlib_orbbec->handle);
+        if (!freed) {
+            printf("Failed to unload dynamic orbbec library.\n");
+        }
+
+        dynlib_t_destroy(dynlib_orbbec_handle);
+        dynlib_orbbec = NULL;
+    }
+    // k4a
+    if (dynlib_handle)
+    {
+        dynlib_context_t* dynlib = dynlib_t_get_context(dynlib_handle);
+
+        BOOL freed = FreeLibrary(dynlib->handle);
+        if (!freed) {
+            printf("Failed to unload dynamic k4a library.\n");
+        }
+
+        dynlib_t_destroy(dynlib_handle);
+        dynlib = NULL;
     }
 
-    dynlib_t_destroy(dynlib_orbbec_handle);
-    dynlib_orbbec = NULL;
-    //k4a
-    dynlib_context_t *dynlib = dynlib_t_get_context(dynlib_handle);
-
-    freed = FreeLibrary(dynlib->handle);
-    if(!freed) {
-        printf("Failed to unload dynamic k4a library.\n");
-    }
-
-    dynlib_t_destroy(dynlib_handle);
-    dynlib = NULL;
 }
