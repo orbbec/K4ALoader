@@ -19,6 +19,11 @@
 #include <string>
 #include <vector>
 
+#define VALIDATE_K4ALOADER_HANDLE_NOT_NULL(ARG)                            \
+    if(ARG == nullptr) {                                                   \
+        throw error("k4a_runtime_instance is null.");                      \
+    }                                                                      
+
 namespace k4a
 {
 
@@ -87,18 +92,18 @@ public:
      * of 1, you should not call k4a_image_release on the handle after giving
      * it to the image; the image will take care of that.
      */
-    image(k4a_runtime_handle* instance, k4a_image_t handle = nullptr) noexcept : m_handle(handle), kl_handle(instance)
+    image(k4a_image_t handle = nullptr, k4a_runtime_handle* instance = nullptr) noexcept : m_handle(handle), kl_handle(instance)
     {
-        if (kl_handle == nullptr)
-        {
-            throw error("k4a_runtime_instance is null.");
-        }
+        VALIDATE_K4ALOADER_HANDLE_NOT_NULL(kl_handle);
+        kl_handle->ref++;
     }
 
     /** Creates a shallow copy of another image
      */
     image(const image &other) noexcept : m_handle(other.m_handle), kl_handle(other.kl_handle)
     {
+        VALIDATE_K4ALOADER_HANDLE_NOT_NULL(kl_handle);
+        kl_handle->ref++;
         if (m_handle != nullptr)
         {
             kl_handle->k4a_image_reference(m_handle);
@@ -127,6 +132,7 @@ public:
             reset();
             m_handle = other.m_handle;
             kl_handle = other.kl_handle;
+            kl_handle->ref++;
             if (m_handle != nullptr)
             {
                 kl_handle->k4a_image_reference(m_handle);
@@ -223,6 +229,7 @@ public:
         }
         if (kl_handle != nullptr)
         {
+            kl_handle->ref--;
             kl_handle = nullptr;
         }
     }
@@ -232,15 +239,19 @@ public:
      *
      * \sa k4a_image_create
      */
-    static image create(k4a_runtime_handle* instance, k4a_image_format_t format, int width_pixels, int height_pixels, int stride_bytes)
+    static image create(k4a_image_format_t format, int width_pixels, int height_pixels, int stride_bytes, k4a_runtime_handle* instance)
     {
+        if (instance == nullptr)
+        {
+            throw error("k4a_runtime_instance is null.");
+        }
         k4a_image_t handle = nullptr;
         k4a_result_t result = instance->k4a_image_create(format, width_pixels, height_pixels, stride_bytes, &handle);
         if (K4A_RESULT_SUCCEEDED != result)
         {
             throw error("Failed to create image!");
         }
-        return image(instance, handle);
+        return image(handle, instance);
     }
 
     /** Create an image from a pre-allocated buffer
@@ -248,15 +259,19 @@ public:
      *
      * \sa k4a_image_create_from_buffer
      */
-    static image create_from_buffer(k4a_runtime_handle* instance, k4a_image_format_t format,
+    static image create_from_buffer(k4a_image_format_t format,
                                     int width_pixels,
                                     int height_pixels,
                                     int stride_bytes,
                                     uint8_t *buffer,
                                     size_t buffer_size,
                                     k4a_memory_destroy_cb_t *buffer_release_cb,
-                                    void *buffer_release_cb_context)
+                                    void *buffer_release_cb_context, k4a_runtime_handle* instance)
     {
+        if (instance == nullptr)
+        {
+            throw error("k4a_runtime_instance is null.");
+        }
         k4a_image_t handle = nullptr;
         k4a_result_t result = instance->k4a_image_create_from_buffer(format,
                                                            width_pixels,
@@ -271,7 +286,7 @@ public:
         {
             throw error("Failed to create image from buffer");
         }
-        return image(instance, handle);
+        return image(handle, instance);
     }
 
     /** Get the image buffer
@@ -448,14 +463,22 @@ public:
      * of 1, you should not call k4a_capture_release on the handle after giving
      * it to the capture; the capture will take care of that.
      */
-    capture(k4a_runtime_handle* instance = nullptr, k4a_capture_t handle = nullptr) noexcept : m_handle(handle), kl_handle(instance)
+    capture(k4a_capture_t handle = nullptr, k4a_runtime_handle* instance = nullptr) noexcept : m_handle(handle), kl_handle(instance)
     {
+        if (instance == nullptr) {
+            instance = get_current_k4a_runtime_handle();
+            if (instance == nullptr) {
+                throw error("The default k4a_runtime_handle is nullptr");
+            }
+        }
     }
 
     /** Creates a shallow copy of another capture
      */
     capture(const capture &other) noexcept : m_handle(other.m_handle), kl_handle(other.kl_handle)
     {
+        VALIDATE_K4ALOADER_HANDLE_NOT_NULL(kl_handle);
+        kl_handle->ref++;
         if (m_handle != nullptr)
         {
             kl_handle->k4a_capture_reference(m_handle);
@@ -485,6 +508,7 @@ public:
             reset();
             m_handle = other.m_handle;
             kl_handle = other.kl_handle;
+            kl_handle->ref++;
             if (m_handle != nullptr)
             {
                 kl_handle->k4a_capture_reference(m_handle);
@@ -591,7 +615,7 @@ public:
      */
     image get_color_image() const noexcept
     {
-        return image(kl_handle, kl_handle->k4a_capture_get_color_image(m_handle));
+        return image(kl_handle->k4a_capture_get_color_image(m_handle), kl_handle);
     }
 
     /** Get the depth image associated with the capture
@@ -600,7 +624,7 @@ public:
      */
     image get_depth_image() const noexcept
     {
-        return image(kl_handle, kl_handle->k4a_capture_get_depth_image(m_handle));
+        return image(kl_handle->k4a_capture_get_depth_image(m_handle), kl_handle);
     }
 
     /** Get the IR image associated with the capture
@@ -609,7 +633,7 @@ public:
      */
     image get_ir_image() const noexcept
     {
-        return image(kl_handle, kl_handle->k4a_capture_get_ir_image(m_handle));
+        return image(kl_handle->k4a_capture_get_ir_image(m_handle), kl_handle);
     }
 
     /** Set / add a color image to the capture
@@ -668,13 +692,17 @@ public:
      */
     static capture create(k4a_runtime_handle* instance)
     {
+        if (instance == nullptr)
+        {
+            throw error("k4a_runtime_instance is null.");
+        }
         k4a_capture_t handle = nullptr;
         k4a_result_t result = instance->k4a_capture_create(&handle);
         if (K4A_RESULT_SUCCEEDED != result)
         {
             throw error("Failed to create capture!");
         }
-        return capture(instance, handle);
+        return capture(handle, instance);
     }
 
 private:
@@ -687,9 +715,10 @@ private:
  *
  * Provides member functions for k4a_calibration_t.
  */
-struct calibration : public k4a_calibration_t
-{
-    k4a_runtime_handle* kl_handle;
+class calibration : public k4a_calibration_t
+{   
+public:
+    //TODO
 
     /** Transform a 3d point of a source coordinate system into a 3d point of the target coordinate system.
      * Throws error on failure.
@@ -811,11 +840,15 @@ struct calibration : public k4a_calibration_t
      *
      * \sa k4a_calibration_get_from_raw
      */
-    static calibration get_from_raw(k4a_runtime_handle* instance, char *raw_calibration,
+    static calibration get_from_raw(char *raw_calibration,
                                     size_t raw_calibration_size,
                                     k4a_depth_mode_t target_depth_mode,
-                                    k4a_color_resolution_t target_color_resolution)
+                                    k4a_color_resolution_t target_color_resolution, k4a_runtime_handle* instance)
     {
+        if (instance == nullptr)
+        {
+            throw error("k4a_runtime_instance is null.");
+        }
         calibration calib;
         k4a_result_t result = instance->k4a_calibration_get_from_raw(raw_calibration,
                                                            raw_calibration_size,
@@ -835,15 +868,16 @@ struct calibration : public k4a_calibration_t
      *
      * \sa k4a_calibration_get_from_raw
      */
-    static calibration get_from_raw(k4a_runtime_handle* instance, uint8_t *raw_calibration,
+    static calibration get_from_raw(uint8_t *raw_calibration,
                                     size_t raw_calibration_size,
                                     k4a_depth_mode_t target_depth_mode,
-                                    k4a_color_resolution_t target_color_resolution)
+                                    k4a_color_resolution_t target_color_resolution, k4a_runtime_handle* instance)
     {
-        return get_from_raw(instance, reinterpret_cast<char *>(raw_calibration),
+
+        return get_from_raw(reinterpret_cast<char *>(raw_calibration),
                             raw_calibration_size,
                             target_depth_mode,
-                            target_color_resolution);
+                            target_color_resolution, instance);
     }
 
     /** Get the camera calibration for a device from a raw calibration blob.
@@ -855,11 +889,13 @@ struct calibration : public k4a_calibration_t
                                     k4a_depth_mode_t target_depth_mode,
                                     k4a_color_resolution_t target_color_resolution)
     {
-        return get_from_raw(instance, reinterpret_cast<char *>(raw_calibration.data()),
+        return get_from_raw(reinterpret_cast<char *>(raw_calibration.data()),
                             raw_calibration.size(),
                             target_depth_mode,
-                            target_color_resolution);
+                            target_color_resolution, instance);
     }
+public:
+    k4a_runtime_handle* kl_handle;
 };
 
 /** \class transformation k4a.hpp <k4a/k4a.hpp>
@@ -874,7 +910,7 @@ public:
      *
      * \sa k4a_transformation_create
      */
-    transformation(const k4a_calibration_t &calibration, k4a_runtime_handle* instance) noexcept :
+    transformation(const k4a_calibration_t &calibration, k4a_runtime_handle* instance = nullptr) noexcept :
         m_handle(k4a_transformation_create(&calibration)),
         m_color_resolution({ calibration.color_camera_calibration.resolution_width,
                              calibration.color_camera_calibration.resolution_height }),
@@ -882,11 +918,12 @@ public:
                              calibration.depth_camera_calibration.resolution_height }),
         kl_handle(instance)
     {
-        if (kl_handle == nullptr)
-        {
-            throw error("k4a_runtime_instance is null.");
+        if (instance == nullptr) {
+            instance = get_current_k4a_runtime_handle();
+            if (instance == nullptr) {
+                throw error("The default k4a_runtime_handle is nullptr");
+            }
         }
-        //k4a_runtime_instance_global = kl_handle;
     }
 
     /** Creates a transformation from a k4a_transformation_t
@@ -894,7 +931,7 @@ public:
      * k4a_transformation_destroy on the handle after giving
      * it to the transformation; the transformation will take care of that.
      */
-    transformation(k4a_runtime_handle* instance, k4a_transformation_t handle = nullptr) noexcept : m_handle(handle), kl_handle(instance)
+    transformation(k4a_transformation_t handle = nullptr, k4a_runtime_handle* instance = nullptr) noexcept : m_handle(handle), kl_handle(instance)
     {
         if (kl_handle == nullptr)
         {
@@ -989,11 +1026,11 @@ public:
      */
     image depth_image_to_color_camera(const image &depth_image) const
     {
-        image transformed_depth_image = image::create(kl_handle, K4A_IMAGE_FORMAT_DEPTH16,
+        image transformed_depth_image = image::create(K4A_IMAGE_FORMAT_DEPTH16,
                                                       m_color_resolution.width,
                                                       m_color_resolution.height,
                                                       m_color_resolution.width *
-                                                          static_cast<int32_t>(sizeof(uint16_t)));
+                                                          static_cast<int32_t>(sizeof(uint16_t)), kl_handle);
         depth_image_to_color_camera(depth_image, &transformed_depth_image);
         return transformed_depth_image;
     }
@@ -1036,11 +1073,11 @@ public:
                                        k4a_transformation_interpolation_type_t interpolation_type,
                                        uint32_t invalid_custom_value) const
     {
-        image transformed_depth_image = image::create(kl_handle, K4A_IMAGE_FORMAT_DEPTH16,
+        image transformed_depth_image = image::create(K4A_IMAGE_FORMAT_DEPTH16,
                                                       m_color_resolution.width,
                                                       m_color_resolution.height,
                                                       m_color_resolution.width *
-                                                          static_cast<int32_t>(sizeof(uint16_t)));
+                                                          static_cast<int32_t>(sizeof(uint16_t)), kl_handle);
         int32_t bytes_per_pixel;
         switch (custom_image.get_format())
         {
@@ -1053,10 +1090,10 @@ public:
         default:
             throw error("Failed to support this format of custom image!");
         }
-        image transformed_custom_image = image::create(kl_handle, custom_image.get_format(),
+        image transformed_custom_image = image::create(custom_image.get_format(),
                                                        m_color_resolution.width,
                                                        m_color_resolution.height,
-                                                       m_color_resolution.width * bytes_per_pixel);
+                                                       m_color_resolution.width * bytes_per_pixel, kl_handle);
         depth_image_to_color_camera_custom(depth_image,
                                            custom_image,
                                            &transformed_depth_image,
@@ -1094,11 +1131,11 @@ public:
      */
     image color_image_to_depth_camera(const image &depth_image, const image &color_image) const
     {
-        image transformed_color_image = image::create(kl_handle, K4A_IMAGE_FORMAT_COLOR_BGRA32,
+        image transformed_color_image = image::create(K4A_IMAGE_FORMAT_COLOR_BGRA32,
                                                       m_depth_resolution.width,
                                                       m_depth_resolution.height,
                                                       m_depth_resolution.width * 4 *
-                                                          static_cast<int32_t>(sizeof(uint8_t)));
+                                                          static_cast<int32_t>(sizeof(uint8_t)), kl_handle);
         color_image_to_depth_camera(depth_image, color_image, &transformed_color_image);
         return transformed_color_image;
     }
@@ -1127,10 +1164,10 @@ public:
      */
     image depth_image_to_point_cloud(const image &depth_image, k4a_calibration_type_t camera) const
     {
-        image xyz_image = image::create(kl_handle, K4A_IMAGE_FORMAT_CUSTOM,
+        image xyz_image = image::create(K4A_IMAGE_FORMAT_CUSTOM,
                                         depth_image.get_width_pixels(),
                                         depth_image.get_height_pixels(),
-                                        depth_image.get_width_pixels() * 3 * static_cast<int32_t>(sizeof(int16_t)));
+                                        depth_image.get_width_pixels() * 3 * static_cast<int32_t>(sizeof(int16_t)), kl_handle);
         depth_image_to_point_cloud(depth_image, camera, &xyz_image);
         return xyz_image;
     }
@@ -1161,12 +1198,8 @@ public:
      * k4a_device_close on the handle after giving it to the
      * device; the device will take care of that.
      */
-    device(k4a_runtime_handle* instance, k4a_device_t handle = nullptr) noexcept : m_handle(handle), kl_handle(instance) {
-        if (kl_handle == nullptr)
-        {
-            throw error("k4a_runtime_instance is null.");
-        }
-        //k4a_runtime_instance_global = kl_handle;
+    device(k4a_device_t handle = nullptr, k4a_runtime_handle* instance = nullptr) noexcept : m_handle(handle), kl_handle(instance) {
+        VALIDATE_K4ALOADER_HANDLE_NOT_NULL(kl_handle);
     }
 
     /** Moves another device into a new device
@@ -1238,7 +1271,7 @@ public:
         }
         if (kl_handle != nullptr)
         {
-            //k4aloader_free_loaded_dll_file(kl_handle);
+            kl_handle->ref--;
             kl_handle = nullptr;
         }
     }
@@ -1264,7 +1297,7 @@ public:
             return false;
         }
 
-        *cap = capture(kl_handle, capture_handle);
+        *cap = capture(capture_handle, kl_handle);
         return true;
     }
 
@@ -1523,7 +1556,7 @@ public:
      */
     static device open( uint32_t index)
     {
-        return device::open(nullptr, index);
+        return device::open(index, nullptr);
     }
 
     /** Open a k4a device.
@@ -1531,13 +1564,13 @@ public:
      *
      * \sa k4a_device_open
      */
-    static device open(k4a_runtime_handle* instance, uint32_t index)
+    static device open(uint32_t index, k4a_runtime_handle* instance)
     {
         k4a_device_t handle = nullptr;
         if (instance == nullptr) {
             instance = get_current_k4a_runtime_handle();
             if (instance == nullptr) {
-                throw error("xxxxx");
+                throw error("The default k4a_runtime_handle is nullptr");
             }
         }
         k4a_result_t result = instance->k4a_device_open(index, &handle);
@@ -1546,7 +1579,7 @@ public:
         {
             throw error("Failed to open device!");
         }
-        return device(instance, handle);
+        return device(handle, instance);
     }
 
     /** Gets the number of connected devices
@@ -1555,6 +1588,12 @@ public:
      */
     static uint32_t get_installed_count(k4a_runtime_handle* instance) noexcept
     {
+        if (instance == nullptr) {
+            instance = get_current_k4a_runtime_handle();
+            if (instance == nullptr) {
+                throw error("The default k4a_runtime_handle is nullptr");
+            }
+        }
         return instance->k4a_device_get_installed_count();
     }
 

@@ -33,24 +33,22 @@ void assignIfNotEqual(char** mutableString, const char* constString) {
 
 k4a_runtime_handle* k4aloader_create_runtime_handle(const char* dll)
 {
-    deloader_context_t *ctx = new(deloader_context_t);
-    k4a_runtime_handle* kl_handle = (k4a_runtime_handle*)malloc(sizeof(k4a_runtime_handle));
-    printf("Start loading dynamic libraries.\n");
-
-    k4a_result_t result = dynlib_create(dll, &ctx->handle, &ctx->orbbec_handle);
-    if (K4A_SUCCEEDED(result))
-    {
-        printf("Dynamic library loaded.\n");
-        for (auto it = created_runtime_handle_map.begin(); it != created_runtime_handle_map.end(); ++it) {
-            if (it->first == dll)
-            {
-                assignIfNotEqual(&map_default_key, it->first);
-                it->second->ref++;
-                return it->second;
-            }
+    for (auto it = created_runtime_handle_map.begin(); it != created_runtime_handle_map.end(); ++it) {
+        if (it->first == dll)
+        {
+            assignIfNotEqual(&map_default_key, it->first);
+            it->second->ref++;
+            printf("Dynamic library loaded.\n");
+            return it->second;
         }
     }
-    else
+
+    deloader_context_t *ctx = new(deloader_context_t);
+    k4a_runtime_handle* kl_handle = (k4a_runtime_handle*)malloc(sizeof(k4a_runtime_handle));
+    kl_handle->ref = 0;
+    printf("Start loading dynamic libraries.\n");
+    k4a_result_t result = dynlib_create(dll, &ctx->handle, &ctx->orbbec_handle);
+    if (K4A_FAILED(result))
     {
         printf("Dynamic library loading failure.\n");
     }
@@ -402,6 +400,7 @@ k4a_runtime_handle* k4aloader_create_runtime_handle(const char* dll)
     if (kl_handle != NULL)
     {
         assignIfNotEqual(&map_default_key, dll);
+        kl_handle->ref++;
         created_runtime_handle_map.insert(std::make_pair(dll, kl_handle));
     }
 
@@ -413,23 +412,26 @@ void k4aloader_free_runtime_handle(k4a_runtime_handle* kl_handle)
     for (auto it = created_runtime_handle_map.begin(); it != created_runtime_handle_map.end(); ++it) {
         if (it->second == kl_handle)
         {         
-            if (--it->second->ref == 0)
+            if ((it->second->ref - 1) == 0)
             {
                 if (kl_handle->context)
                 {
                     dynlib_destroy(((deloader_context_t*)kl_handle->context)->handle, ((deloader_context_t*)kl_handle->context)->orbbec_handle);
                     delete kl_handle->context;
                     kl_handle->context = nullptr;
-                    printf("The k4a_runtime_instance has been released.\n");
+                    printf("The k4a_runtime_handle has been released.\n");
                 }
                 free(kl_handle);
                 kl_handle = NULL;
                 map_default_key = NULL;
-                assignIfNotEqual(&map_default_key, created_runtime_handle_map.begin()->first);
+                if (created_runtime_handle_map.size() > 0)
+                {
+                    assignIfNotEqual(&map_default_key, created_runtime_handle_map.begin()->first);
+                }
             }
             else
             {
-                printf("This k4a_runtime_instance reference count is not 0 and cannot be released.\n");
+                printf("This k4a_runtime_handle reference count is not 0 and cannot be released.\n");
             }
         }
     }
@@ -441,18 +443,23 @@ k4a_runtime_handle* get_current_k4a_runtime_handle()
     {
         if (strcmp(map_default_key, it->first) == 0)
         {
+            it->second->ref++;
             return it->second;
         }
     }
     return nullptr;
 }
 
-void switch_k4a_runtime_handle(const char* dll)
+bool switch_k4a_runtime_handle(const char* dll)
 {
     for (auto it = created_runtime_handle_map.begin(); it != created_runtime_handle_map.end(); ++it) {
         if (it->first == dll)
         {
             assignIfNotEqual(&map_default_key, it->first);
+            printf("Default runtime_handle switch succeeds.\n");
+            return true;
         }
     }
+    printf("The runtime_handle corresponding to the input dynamic library path does not exist and the switch fails.\n");
+    return false;
 }
