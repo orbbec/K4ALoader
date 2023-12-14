@@ -471,6 +471,10 @@ public:
                 throw error("The default k4a_runtime_handle is nullptr");
             }
         }
+        else
+        {
+            kl_handle->ref++;
+        }
     }
 
     /** Creates a shallow copy of another capture
@@ -718,7 +722,27 @@ private:
 class calibration : public k4a_calibration_t
 {   
 public:
-    //TODO
+    calibration(k4a_runtime_handle* instance = nullptr) noexcept : kl_handle(instance) {
+        if (instance == nullptr) {
+            instance = get_current_k4a_runtime_handle();
+            if (instance == nullptr) {
+                throw error("The default k4a_runtime_handle is nullptr");
+            }
+        }
+        else
+        {
+            kl_handle->ref++;
+        }
+    }
+
+    ~calibration()
+    {
+        if (kl_handle != nullptr)
+        {
+            kl_handle->ref--;
+            kl_handle = nullptr;
+        }
+    }
 
     /** Transform a 3d point of a source coordinate system into a 3d point of the target coordinate system.
      * Throws error on failure.
@@ -923,6 +947,10 @@ public:
             if (instance == nullptr) {
                 throw error("The default k4a_runtime_handle is nullptr");
             }
+        }
+        else
+        {
+            kl_handle->ref++;
         }
     }
 
