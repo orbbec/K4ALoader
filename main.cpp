@@ -3,24 +3,77 @@
 
 #include <iostream>
 #include <memory>
+#include <k4loader/k4a.hpp>
 
-int main()
-{
+void openStream() {
 
-    k4aloader_handle* instance = k4aloader_dll_file_load("D:\\Test\\TestLoad");
+    k4a_runtime_handle* kl_handle = k4aloader_create_runtime_handle("D:\\Test\\TestLoad");
 
-    if (instance != NULL)
+    if (kl_handle != NULL)
     {
-        int count = instance->k4a_device_get_installed_count();
+        const int32_t TIMEOUT_IN_MS = 1000;
+        k4a::capture capture = nullptr;
 
+        int count = k4a::device::get_installed_count(kl_handle);
         printf("device_count: %d\n", count);
-        
-        k4aloader_free_loaded_dll_file(instance);
+        if (count > 0) {
+            auto dev = k4a::device::open(0);
+
+            auto raw = dev.get_raw_calibration();
+            auto size = raw.size();
+            printf("raw_size: %d\n", size);
+
+            k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
+            config.color_format = K4A_IMAGE_FORMAT_COLOR_MJPG;
+            config.color_resolution = K4A_COLOR_RESOLUTION_1080P;
+            config.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
+            config.camera_fps = K4A_FRAMES_PER_SECOND_30;
+            dev.start_cameras(&config);
+
+            while (true)
+            {
+                auto res = dev.get_capture(&capture);
+
+                if (res)
+                {
+                    printf("Capture");
+
+                    // Probe for a color image
+                    auto imageColor = capture.get_color_image();
+                    if (imageColor)
+                    {
+                        printf(" | Color res:%4dx%4d stride:%5d,dataSize:%d ",
+                            imageColor.get_height_pixels(),
+                            imageColor.get_width_pixels(),
+                            imageColor.get_stride_bytes(),
+                            (int)imageColor.get_size());
+                        imageColor.reset();
+                        printf("\n");
+                    }
+                    else
+                    {
+                        printf(" | Color None                       ");
+                        printf("\n");
+                    }
+
+                    // release capture
+                    capture.reset();
+                    fflush(stdout);
+
+                }
+            }
+
+        }
+        k4aloader_free_runtime_handle(kl_handle);
     }
     else
     {
         printf("Failed to load this.\n");
     }
+}
+
+int main()
+{
     
 }
 
