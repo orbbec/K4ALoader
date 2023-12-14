@@ -1,433 +1,370 @@
+#include <iostream>
+#include <k4loader/k4a.hpp>
+#include <memory>
+
 #include "k4aLoader.h"
 #include "k4atypes.h"
 
-#include <iostream>
-#include <memory>
-#include <k4loader/k4a.hpp>
-
-// ×¢Òâ£º²âÊÔÇ°ÇëÏÈÐÞ¸Ä¶¯Ì¬¿â¼ÓÔØÂ·¾¶£¡£¡£¡
+// ×¢ï¿½â£ºï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½Þ¸Ä¶ï¿½Ì¬ï¿½ï¿½ï¿½ï¿½ï¿½Â·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 int captureFrameCount;
 int mode;
-// C++½Ó¿Ú¿ªÁ÷
+// C++æŽ¥å£å¼€æµ
 void openAllStream() {
-    // ÊäÈë¶¯Ì¬¿âËùÔÚÎÄ¼þ¼ÐÂ·¾¶, ¼ÓÔØ¶¯Ì¬¿â
-    k4aRuntimeHandle* klHandle = k4aloader_create_runtime_handle("D:\\k4aLoader\\k4aLoader\\Test\\wrapper");
+  // è¾“å…¥åŠ¨æ€åº“æ‰€åœ¨æ–‡ä»¶å¤¹è·¯å¾„, åŠ è½½åŠ¨æ€åº“
+  k4aRuntimeHandle* klHandle = k4aloader_create_runtime_handle("D:\\k4aLoader\\k4aLoader\\Test\\wrapper");
 
-    if (klHandle != nullptr)
-    {
-        k4a::capture capture;
-        // ¾²Ì¬·½·¨µ÷ÓÃÐèÒªÊäÈëk4a_runtime_handle×÷Îª²ÎÊý
-        int count = k4a::device::get_installed_count(klHandle);
-        printf("deviceCount: %d\n", count);
+  if (klHandle != nullptr) {
+    k4a::capture capture;
+    // é™æ€æ–¹æ³•è°ƒç”¨éœ€è¦è¾“å…¥k4a_runtime_handleä½œä¸ºå‚æ•°
+    int count = k4a::device::get_installed_count(klHandle);
+    printf("deviceCount: %d\n", count);
 
-        if (count > 0) {
-            // ÏÂÃæÎªÒþÊ¿µ÷ÓÃk4aLoaderÖÐµÄget_current_k4a_runtime_handleÄÃÈ¥µ±Ç°Ä¬ÈÏµÄk4a_runtime_handle´ò¿ªk4aÉè±¸
-            // Ä¬ÈÏµÄk4a_runtime_handle¿Éµ÷ÓÃk4aLoaderÖÐµÄswitch_k4a_runtime_handleº¯Êý½øÐÐÇÐ»» 
-            auto dev = k4a::device::open(0);  
-            // Ò²¿ÉÏÔÊ¾ÊäÈëk4a_runtime_handle½øÐÐdevice k4aÉè±¸´ò¿ª
-            //auto dev = k4a::device::open(kl_handle, 0);
+    if (count > 0) {
+      // ä¸‹é¢ä¸ºéšå£«è°ƒç”¨k4aLoaderä¸­çš„get_current_k4a_runtime_handleæ‹¿åŽ»å½“å‰é»˜è®¤çš„k4a_runtime_handleæ‰“å¼€k4aè®¾å¤‡
+      // é»˜è®¤çš„k4a_runtime_handleå¯è°ƒç”¨k4aLoaderä¸­çš„switch_k4a_runtime_handleå‡½æ•°è¿›è¡Œåˆ‡æ¢
+      auto dev = k4a::device::open(0);
+      // ä¹Ÿå¯æ˜¾ç¤ºè¾“å…¥k4a_runtime_handleè¿›è¡Œdevice k4aè®¾å¤‡æ‰“å¼€
+      // auto dev = k4a::device::open(kl_handle, 0);
 
-            k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
-            config.color_format = K4A_IMAGE_FORMAT_COLOR_MJPG;
-            config.color_resolution = K4A_COLOR_RESOLUTION_1080P;
-            config.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
-            config.camera_fps = K4A_FRAMES_PER_SECOND_30;
-            dev.start_cameras(&config);
+      k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
+      config.color_format = K4A_IMAGE_FORMAT_COLOR_MJPG;
+      config.color_resolution = K4A_COLOR_RESOLUTION_1080P;
+      config.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
+      config.camera_fps = K4A_FRAMES_PER_SECOND_30;
+      dev.start_cameras(&config);
 
-            while (captureFrameCount-- > 0)
-            {
-                auto res = dev.get_capture(&capture);
+      while (captureFrameCount-- > 0) {
+        auto res = dev.get_capture(&capture);
 
-                if (res)
-                {
-                    printf("Capture");
+        if (res) {
+          printf("Capture");
 
-                    // color image
-                    auto imageColor = capture.get_color_image();
-                    if (imageColor)
-                    {
-                        printf(" | Color res:%4dx%4d stride:%5d,dataSize:%d ",
-                            imageColor.get_height_pixels(),
-                            imageColor.get_width_pixels(),
-                            imageColor.get_stride_bytes(),
-                            (int)imageColor.get_size());
-                        imageColor.reset();
-                    }
-                    else
-                    {
-                        printf(" | Color None                       ");
-                    }
+          // color image
+          auto imageColor = capture.get_color_image();
+          if (imageColor) {
+            printf(" | Color res:%4dx%4d stride:%5d,dataSize:%d ",
+                   imageColor.get_height_pixels(),
+                   imageColor.get_width_pixels(),
+                   imageColor.get_stride_bytes(),
+                   (int)imageColor.get_size());
+            imageColor.reset();
+          } else {
+            printf(" | Color None                       ");
+          }
 
-                    // IR16 image
-                    auto imageIr = capture.get_color_image();
-                    if (imageIr)
-                    {
-                        printf(" | Ir16 res:%4dx%4d stride:%5d ",
-                            imageIr.get_height_pixels(),
-                            imageIr.get_width_pixels(),
-                            imageIr.get_stride_bytes(),
-                            (int)imageIr.get_size());
-                        imageIr.reset();
-                    }
-                    else
-                    {
-                        printf(" | Ir16 None                      ");
-                    }
+          // IR16 image
+          auto imageIr = capture.get_color_image();
+          if (imageIr) {
+            printf(" | Ir16 res:%4dx%4d stride:%5d ",
+                   imageIr.get_height_pixels(),
+                   imageIr.get_width_pixels(),
+                   imageIr.get_stride_bytes(),
+                   (int)imageIr.get_size());
+            imageIr.reset();
+          } else {
+            printf(" | Ir16 None                      ");
+          }
 
-                    // depth16 image
-                    auto imageDepth = capture.get_color_image();
-                    if (imageDepth)
-                    {
-                        printf(" | Depth16 res:%4dx%4d stride:%5d\n",
-                            imageDepth.get_height_pixels(),
-                            imageDepth.get_width_pixels(),
-                            imageDepth.get_stride_bytes(),
-                            (int)imageDepth.get_size());
-                        imageDepth.reset();
-                    }
-                    else
-                    {
-                        printf(" | Depth16 None\n");
-                    }
+          // depth16 image
+          auto imageDepth = capture.get_color_image();
+          if (imageDepth) {
+            printf(" | Depth16 res:%4dx%4d stride:%5d\n",
+                   imageDepth.get_height_pixels(),
+                   imageDepth.get_width_pixels(),
+                   imageDepth.get_stride_bytes(),
+                   (int)imageDepth.get_size());
+            imageDepth.reset();
+          } else {
+            printf(" | Depth16 None\n");
+          }
 
-                    // release capture
-                    capture.reset();
-                    fflush(stdout);
-                }
-            }
-            // ¹Ø±ÕÉè±¸Á¬½Ó, Í¬Ê±»á¶ÔÊ¹ÓÃµÄk4a_runtime_handleµÄÒýÓÃ¼ÆÊý¼õ1
-            dev.close();
+          // release capture
+          capture.reset();
+          fflush(stdout);
         }
-        // ÊÍ·Å¶¯Ì¬¿âÁ¬½Ó, Ðè×¢ÒâÖ»ÓÐµ±k4a_runtime_handleÒýÓÃ¼ÆÊýÎª0Ê±²Å»á±»³¹µ×ÊÍ·Åµô
-        k4aloader_free_runtime_handle(klHandle);
+      }
+      // å…³é—­è®¾å¤‡è¿žæŽ¥, åŒæ—¶ä¼šå¯¹ä½¿ç”¨çš„k4a_runtime_handleçš„å¼•ç”¨è®¡æ•°å‡1
+      dev.close();
     }
-    else
-    {
-        printf("Failed to load this.\n");
-    }
+    // é‡Šæ”¾åŠ¨æ€åº“è¿žæŽ¥, éœ€æ³¨æ„åªæœ‰å½“k4a_runtime_handleå¼•ç”¨è®¡æ•°ä¸º0æ—¶æ‰ä¼šè¢«å½»åº•é‡Šæ”¾æŽ‰
+    k4aloader_free_runtime_handle(klHandle);
+  } else {
+    printf("Failed to load this.\n");
+  }
 }
 
-// C½Ó¿Ú¿ªÁ÷
-void openAllStreamC() 
-{
-    // ÊäÈë¶¯Ì¬¿âËùÔÚÎÄ¼þ¼ÐÂ·¾¶, ¼ÓÔØ¶¯Ì¬¿â
-    k4a_runtime_handle* instance = k4aloader_create_runtime_handle("D:\\k4aLoader\\k4aLoader\\Test\\wrapper");
+// CæŽ¥å£å¼€æµ
+void openAllStreamC() {
+  // è¾“å…¥åŠ¨æ€åº“æ‰€åœ¨æ–‡ä»¶å¤¹è·¯å¾„, åŠ è½½åŠ¨æ€åº“
+  k4a_runtime_handle* instance = k4aloader_create_runtime_handle("D:\\k4aLoader\\k4aLoader\\Test\\wrapper");
 
-    if (instance != NULL)
-    {
-        k4a_capture_t capture = NULL;
-        const int32_t TIMEOUT_IN_MS = 1000;
-        // Ê¹ÓÃk4a_runtime_handle½øÐÐº¯Êýµ÷ÓÃ, »ñÈ¡µ±Ç°Á¬½ÓÉè±¸¸öÊý
-        int count = instance->k4a_device_get_installed_count();
-        printf("device_count: %d\n", count);
+  if (instance != NULL) {
+    k4a_capture_t capture = NULL;
+    const int32_t TIMEOUT_IN_MS = 1000;
+    // ä½¿ç”¨k4a_runtime_handleè¿›è¡Œå‡½æ•°è°ƒç”¨, èŽ·å–å½“å‰è¿žæŽ¥è®¾å¤‡ä¸ªæ•°
+    int count = instance->k4a_device_get_installed_count();
+    printf("device_count: %d\n", count);
 
-        if (count > 0)
-        {
-            k4a_device_t device;
-            // ´ò¿ªÉè±¸0
-            if (K4A_RESULT_SUCCEEDED != instance->k4a_device_open(K4A_DEVICE_DEFAULT, &device))
-            {
-                printf("Failed to open device\n");
-                return ;
-            }
-            // ÅäÖÃ¿ªÁ÷config
-            k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
-            config.color_format = K4A_IMAGE_FORMAT_COLOR_MJPG;
-            config.color_resolution = K4A_COLOR_RESOLUTION_1080P;
-            config.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
-            config.camera_fps = K4A_FRAMES_PER_SECOND_30;
-            // ¿ªÁ÷
-            if (K4A_RESULT_SUCCEEDED != instance->k4a_device_start_cameras(device, &config))
-            {
-                printf("Failed to start device\n");
-                return ;
-            }
-            // È¡Ö¡
-            while (captureFrameCount-- > 0)
-            {
-                k4a_image_t image;
+    if (count > 0) {
+      k4a_device_t device;
+      // æ‰“å¼€è®¾å¤‡0
+      if (K4A_RESULT_SUCCEEDED != instance->k4a_device_open(K4A_DEVICE_DEFAULT, &device)) {
+        printf("Failed to open device\n");
+        return;
+      }
+      // é…ç½®å¼€æµconfig
+      k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
+      config.color_format = K4A_IMAGE_FORMAT_COLOR_MJPG;
+      config.color_resolution = K4A_COLOR_RESOLUTION_1080P;
+      config.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
+      config.camera_fps = K4A_FRAMES_PER_SECOND_30;
+      // å¼€æµ
+      if (K4A_RESULT_SUCCEEDED != instance->k4a_device_start_cameras(device, &config)) {
+        printf("Failed to start device\n");
+        return;
+      }
+      // å–å¸§
+      while (captureFrameCount-- > 0) {
+        k4a_image_t image;
 
-                // Get a depth frame
-                switch (instance->k4a_device_get_capture(device, &capture, TIMEOUT_IN_MS))
-                {
-                case K4A_WAIT_RESULT_SUCCEEDED:
-                    break;
-                case K4A_WAIT_RESULT_TIMEOUT:
-                    printf("Timed out waiting for a capture\n");
-                    continue;
-                    break;
-                case K4A_WAIT_RESULT_FAILED:
-                    printf("Failed to read a capture\n");
-                    return ;
-                }
-
-                printf("Capture");
-
-                // color image
-                image = instance->k4a_capture_get_color_image(capture);
-                if (image != NULL)
-                {
-                    printf(" | Color res:%4dx%4d stride:%5d,dataSize:%d ",
-                        instance->k4a_image_get_height_pixels(image),
-                        instance->k4a_image_get_width_pixels(image),
-                        instance->k4a_image_get_stride_bytes(image),
-                        (int)instance->k4a_image_get_size(image));
-                    instance->k4a_image_release(image);
-                }
-                else
-                {
-                    printf(" | Color None                       ");
-                }
-
-                // IR16 image
-                image = instance->k4a_capture_get_ir_image(capture);
-                if (image != NULL)
-                {
-                    printf(" | Ir16 res:%4dx%4d stride:%5d ",
-                        instance->k4a_image_get_height_pixels(image),
-                        instance->k4a_image_get_width_pixels(image),
-                        instance->k4a_image_get_stride_bytes(image));
-                    instance->k4a_image_release(image);
-                }
-                else
-                {
-                    printf(" | Ir16 None                       ");
-                }
-
-                // depth16 image
-                image = instance->k4a_capture_get_depth_image(capture);
-                if (image != NULL)
-                {
-                    printf(" | Depth16 res:%4dx%4d stride:%5d\n",
-                        instance->k4a_image_get_height_pixels(image),
-                        instance->k4a_image_get_width_pixels(image),
-                        instance->k4a_image_get_stride_bytes(image));
-                    instance->k4a_image_release(image);
-                }
-                else
-                {
-                    printf(" | Depth16 None\n");
-                }
-
-                // release capture
-                instance->k4a_capture_release(capture);
-                fflush(stdout);
-            }
-            // ¹ØÁ÷¡¢¹Ø±ÕÉè±¸
-            if (device != NULL)
-            {
-                instance->k4a_device_stop_cameras(device);
-                instance->k4a_device_close(device);
-            }
+        // Get a depth frame
+        switch (instance->k4a_device_get_capture(device, &capture, TIMEOUT_IN_MS)) {
+          case K4A_WAIT_RESULT_SUCCEEDED:
+            break;
+          case K4A_WAIT_RESULT_TIMEOUT:
+            printf("Timed out waiting for a capture\n");
+            continue;
+            break;
+          case K4A_WAIT_RESULT_FAILED:
+            printf("Failed to read a capture\n");
+            return;
         }
-        // ÊÍ·Å¶¯Ì¬¿âÁ¬½Ó, Ðè×¢ÒâÖ»ÓÐµ±k4a_runtime_handleÒýÓÃ¼ÆÊýÎª0Ê±²Å»á±»³¹µ×ÊÍ·Åµô
-        k4aloader_free_runtime_handle(instance);
+
+        printf("Capture");
+
+        // color image
+        image = instance->k4a_capture_get_color_image(capture);
+        if (image != NULL) {
+          printf(" | Color res:%4dx%4d stride:%5d,dataSize:%d ",
+                 instance->k4a_image_get_height_pixels(image),
+                 instance->k4a_image_get_width_pixels(image),
+                 instance->k4a_image_get_stride_bytes(image),
+                 (int)instance->k4a_image_get_size(image));
+          instance->k4a_image_release(image);
+        } else {
+          printf(" | Color None                       ");
+        }
+
+        // IR16 image
+        image = instance->k4a_capture_get_ir_image(capture);
+        if (image != NULL) {
+          printf(" | Ir16 res:%4dx%4d stride:%5d ",
+                 instance->k4a_image_get_height_pixels(image),
+                 instance->k4a_image_get_width_pixels(image),
+                 instance->k4a_image_get_stride_bytes(image));
+          instance->k4a_image_release(image);
+        } else {
+          printf(" | Ir16 None                       ");
+        }
+
+        // depth16 image
+        image = instance->k4a_capture_get_depth_image(capture);
+        if (image != NULL) {
+          printf(" | Depth16 res:%4dx%4d stride:%5d\n",
+                 instance->k4a_image_get_height_pixels(image),
+                 instance->k4a_image_get_width_pixels(image),
+                 instance->k4a_image_get_stride_bytes(image));
+          instance->k4a_image_release(image);
+        } else {
+          printf(" | Depth16 None\n");
+        }
+
+        // release capture
+        instance->k4a_capture_release(capture);
+        fflush(stdout);
+      }
+      // å…³æµã€å…³é—­è®¾å¤‡
+      if (device != NULL) {
+        instance->k4a_device_stop_cameras(device);
+        instance->k4a_device_close(device);
+      }
     }
-    else
-    {
-        printf("Failed to load this.\n");
-    }
+    // é‡Šæ”¾åŠ¨æ€åº“è¿žæŽ¥, éœ€æ³¨æ„åªæœ‰å½“k4a_runtime_handleå¼•ç”¨è®¡æ•°ä¸º0æ—¶æ‰ä¼šè¢«å½»åº•é‡Šæ”¾æŽ‰
+    k4aloader_free_runtime_handle(instance);
+  } else {
+    printf("Failed to load this.\n");
+  }
 }
 
-// C++Í¬Ê±´ò¿ªMeagaºÍAzure Kinect
-void bothDeivceOpen() 
-{
-    // ÊäÈë¶¯Ì¬¿âËùÔÚÎÄ¼þ¼ÐÂ·¾¶, ¼ÓÔØ¶¯Ì¬¿â
-    k4aRuntimeHandle* klHandleWR = k4aloader_create_runtime_handle("D:\\k4aLoader\\k4aLoader\\Test\\wrapper");
-    k4aRuntimeHandle* klHandleAK = k4aloader_create_runtime_handle("D:\\k4aLoader\\k4aLoader\\Test\\akdk");
+// C++åŒæ—¶æ‰“å¼€Meagaå’ŒAzure Kinect
+void bothDeivceOpen() {
+  // è¾“å…¥åŠ¨æ€åº“æ‰€åœ¨æ–‡ä»¶å¤¹è·¯å¾„, åŠ è½½åŠ¨æ€åº“
+  k4aRuntimeHandle* klHandleWR = k4aloader_create_runtime_handle("D:\\k4aLoader\\k4aLoader\\Test\\wrapper");
+  k4aRuntimeHandle* klHandleAK = k4aloader_create_runtime_handle("D:\\k4aLoader\\k4aLoader\\Test\\akdk");
 
-    if (klHandleWR != nullptr && klHandleAK != nullptr)
-    {
-        k4a::capture captureWR = nullptr;
-        k4a::capture captureAK = nullptr;
-        // ¾²Ì¬·½·¨µ÷ÓÃÐèÒªÊäÈëk4a_runtime_handle×÷Îª²ÎÊý
-        int countWR = k4a::device::get_installed_count(klHandleWR);
-        int countAK = k4a::device::get_installed_count(klHandleAK);
+  if (klHandleWR != nullptr && klHandleAK != nullptr) {
+    k4a::capture captureWR = nullptr;
+    k4a::capture captureAK = nullptr;
+    // é™æ€æ–¹æ³•è°ƒç”¨éœ€è¦è¾“å…¥k4a_runtime_handleä½œä¸ºå‚æ•°
+    int countWR = k4a::device::get_installed_count(klHandleWR);
+    int countAK = k4a::device::get_installed_count(klHandleAK);
 
-        printf("WrapperDeviceCount: %d\n", countWR);
-        printf("AKDKDeviceCount: %d\n", countAK);
+    printf("WrapperDeviceCount: %d\n", countWR);
+    printf("AKDKDeviceCount: %d\n", countAK);
 
-        if (countWR > 0 && countAK > 0) {
-            // ´«Èëk4a_runtime_handle´ò¿ªÉè±¸
-            auto warDevice = k4a::device::open(0, klHandleWR);
-            auto akDevice = k4a::device::open(0, klHandleAK);
-            // Ò²¿ÉÏÔÊ¾ÊäÈëk4a_runtime_handle½øÐÐdevice k4aÉè±¸´ò¿ª
-            //auto dev = k4a::device::open(kl_handle, 0);
+    if (countWR > 0 && countAK > 0) {
+      // æ˜¾å¼ä¼ å…¥SDKçš„handleæ‰“å¼€ä¸åŒdevice
+      auto warDevice = k4a::device::open(0, klHandleWR);  // ob
+      auto akDevice = k4a::device::open(0, klHandleAK);   // akdk
 
-            k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
-            config.color_format = K4A_IMAGE_FORMAT_COLOR_MJPG;
-            config.color_resolution = K4A_COLOR_RESOLUTION_1080P;
-            config.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
-            config.camera_fps = K4A_FRAMES_PER_SECOND_15;
+      k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
+      config.color_format = K4A_IMAGE_FORMAT_COLOR_MJPG;
+      config.color_resolution = K4A_COLOR_RESOLUTION_1080P;
+      config.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
+      config.camera_fps = K4A_FRAMES_PER_SECOND_15;
 
-            warDevice.start_cameras(&config);
-            akDevice.start_cameras(&config);
+      warDevice.start_cameras(&config);
+      akDevice.start_cameras(&config);
 
-            while (captureFrameCount-- > 0)
-            {
-                auto resWR = warDevice.get_capture(&captureWR);
+      while (captureFrameCount-- > 0) {
+        auto resWR = warDevice.get_capture(&captureWR);
 
-                if (resWR)
-                {
-                    printf("Capture >>>>>> Wrapper");
+        if (resWR) {
+          printf("Capture >>>>>> Wrapper");
 
-                    // color image
-                    auto imageColor = captureWR.get_color_image();
-                    if (imageColor)
-                    {
-                        printf(" | Color res:%4dx%4d stride:%5d,dataSize:%d ",
-                            imageColor.get_height_pixels(),
-                            imageColor.get_width_pixels(),
-                            imageColor.get_stride_bytes(),
-                            (int)imageColor.get_size());
-                        imageColor.reset();
-                    }
-                    else
-                    {
-                        printf(" | Color None                       ");
-                    }
+          // color image
+          auto imageColor = captureWR.get_color_image();
+          if (imageColor) {
+            printf(" | Color res:%4dx%4d stride:%5d,dataSize:%d ",
+                   imageColor.get_height_pixels(),
+                   imageColor.get_width_pixels(),
+                   imageColor.get_stride_bytes(),
+                   (int)imageColor.get_size());
+            imageColor.reset();
+          } else {
+            printf(" | Color None                       ");
+          }
 
-                    // IR16 image
-                    auto imageIr = captureWR.get_color_image();
-                    if (imageIr)
-                    {
-                        printf(" | Ir16 res:%4dx%4d stride:%5d ",
-                            imageIr.get_height_pixels(),
-                            imageIr.get_width_pixels(),
-                            imageIr.get_stride_bytes(),
-                            (int)imageIr.get_size());
-                        imageIr.reset();
-                    }
-                    else
-                    {
-                        printf(" | Ir16 None                      ");
-                    }
+          // IR16 image
+          auto imageIr = captureWR.get_color_image();
+          if (imageIr) {
+            printf(" | Ir16 res:%4dx%4d stride:%5d ",
+                   imageIr.get_height_pixels(),
+                   imageIr.get_width_pixels(),
+                   imageIr.get_stride_bytes(),
+                   (int)imageIr.get_size());
+            imageIr.reset();
+          } else {
+            printf(" | Ir16 None                      ");
+          }
 
-                    // depth16 image
-                    auto imageDepth = captureWR.get_color_image();
-                    if (imageDepth)
-                    {
-                        printf(" | Depth16 res:%4dx%4d stride:%5d\n",
-                            imageDepth.get_height_pixels(),
-                            imageDepth.get_width_pixels(),
-                            imageDepth.get_stride_bytes(),
-                            (int)imageDepth.get_size());
-                        imageDepth.reset();
-                    }
-                    else
-                    {
-                        printf(" | Depth16 None\n");
-                    }
+          // depth16 image
+          auto imageDepth = captureWR.get_color_image();
+          if (imageDepth) {
+            printf(" | Depth16 res:%4dx%4d stride:%5d\n",
+                   imageDepth.get_height_pixels(),
+                   imageDepth.get_width_pixels(),
+                   imageDepth.get_stride_bytes(),
+                   (int)imageDepth.get_size());
+            imageDepth.reset();
+          } else {
+            printf(" | Depth16 None\n");
+          }
 
-                    // release capture
-                    captureWR.reset();
-                    fflush(stdout);
-                }
-
-                auto resAK = warDevice.get_capture(&captureAK);
-
-                if (resAK)
-                {
-                    printf("Capture >>>>>> AKDK");
-
-                    // color image
-                    auto imageColor = captureAK.get_color_image();
-                    if (imageColor)
-                    {
-                        printf(" | Color res:%4dx%4d stride:%5d,dataSize:%d ",
-                            imageColor.get_height_pixels(),
-                            imageColor.get_width_pixels(),
-                            imageColor.get_stride_bytes(),
-                            (int)imageColor.get_size());
-                        imageColor.reset();
-                    }
-                    else
-                    {
-                        printf(" | Color None                       ");
-                    }
-
-                    // IR16 image
-                    auto imageIr = captureAK.get_color_image();
-                    if (imageIr)
-                    {
-                        printf(" | Ir16 res:%4dx%4d stride:%5d ",
-                            imageIr.get_height_pixels(),
-                            imageIr.get_width_pixels(),
-                            imageIr.get_stride_bytes(),
-                            (int)imageIr.get_size());
-                        imageIr.reset();
-                    }
-                    else
-                    {
-                        printf(" | Ir16 None                      ");
-                    }
-
-                    // depth16 image
-                    auto imageDepth = captureAK.get_color_image();
-                    if (imageDepth)
-                    {
-                        printf(" | Depth16 res:%4dx%4d stride:%5d\n",
-                            imageDepth.get_height_pixels(),
-                            imageDepth.get_width_pixels(),
-                            imageDepth.get_stride_bytes(),
-                            (int)imageDepth.get_size());
-                        imageDepth.reset();
-                    }
-                    else
-                    {
-                        printf(" | Depth16 None\n");
-                    }
-
-                    // release capture
-                    captureAK.reset();
-                    fflush(stdout);
-                }
-            }
-            // ¹Ø±ÕÉè±¸Á¬½Ó, Í¬Ê±»á¶ÔÊ¹ÓÃµÄk4a_runtime_handleµÄÒýÓÃ¼ÆÊý¼õ1
-            warDevice.close();
-            akDevice.close();
+          // release capture
+          captureWR.reset();
+          fflush(stdout);
         }
-        // ÊÍ·Å¶¯Ì¬¿âÁ¬½Ó, Ðè×¢ÒâÖ»ÓÐµ±k4a_runtime_handleÒýÓÃ¼ÆÊýÎª0Ê±²Å»á±»³¹µ×ÊÍ·Åµô
-        k4aloader_free_runtime_handle(klHandleWR);
-        k4aloader_free_runtime_handle(klHandleAK);
+
+        auto resAK = warDevice.get_capture(&captureAK);
+
+        if (resAK) {
+          printf("Capture >>>>>> AKDK");
+
+          // color image
+          auto imageColor = captureAK.get_color_image();
+          if (imageColor) {
+            printf(" | Color res:%4dx%4d stride:%5d,dataSize:%d ",
+                   imageColor.get_height_pixels(),
+                   imageColor.get_width_pixels(),
+                   imageColor.get_stride_bytes(),
+                   (int)imageColor.get_size());
+            imageColor.reset();
+          } else {
+            printf(" | Color None                       ");
+          }
+
+          // IR16 image
+          auto imageIr = captureAK.get_color_image();
+          if (imageIr) {
+            printf(" | Ir16 res:%4dx%4d stride:%5d ",
+                   imageIr.get_height_pixels(),
+                   imageIr.get_width_pixels(),
+                   imageIr.get_stride_bytes(),
+                   (int)imageIr.get_size());
+            imageIr.reset();
+          } else {
+            printf(" | Ir16 None                      ");
+          }
+
+          // depth16 image
+          auto imageDepth = captureAK.get_color_image();
+          if (imageDepth) {
+            printf(" | Depth16 res:%4dx%4d stride:%5d\n",
+                   imageDepth.get_height_pixels(),
+                   imageDepth.get_width_pixels(),
+                   imageDepth.get_stride_bytes(),
+                   (int)imageDepth.get_size());
+            imageDepth.reset();
+          } else {
+            printf(" | Depth16 None\n");
+          }
+
+          // release capture
+          captureAK.reset();
+          fflush(stdout);
+        }
+      }
+      // å…³é—­è®¾å¤‡è¿žæŽ¥, åŒæ—¶ä¼šå¯¹ä½¿ç”¨çš„k4a_runtime_handleçš„å¼•ç”¨è®¡æ•°å‡1
+      warDevice.close();
+      akDevice.close();
     }
-    else
-    {
-        printf("Failed to load this.\n");
-    }
+    // é‡Šæ”¾åŠ¨æ€åº“è¿žæŽ¥, éœ€æ³¨æ„åªæœ‰å½“k4a_runtime_handleå¼•ç”¨è®¡æ•°ä¸º0æ—¶æ‰ä¼šè¢«å½»åº•é‡Šæ”¾æŽ‰
+    k4aloader_free_runtime_handle(klHandleWR);
+    k4aloader_free_runtime_handle(klHandleAK);
+  } else {
+    printf("Failed to load this.\n");
+  }
 }
 
-int main()
-{
+int main() {
+  captureFrameCount = 500;
+  bothDeivceOpen();
+
+  printf("Please enter the number of fetches: ");
+  std::cin >> captureFrameCount;
+  if (captureFrameCount <= 0) {
+    printf("Enter a value no greater than 0, default is 500");
     captureFrameCount = 500;
-    bothDeivceOpen();
-
-    printf("Please enter the number of fetches: ");
-    std::cin >> captureFrameCount;
-    if (captureFrameCount <= 0)
-    {
-        printf("Enter a value no greater than 0, default is 500");
-        captureFrameCount = 500;
-    }
-    printf("3 test modes: ");
-    printf("0.C++ open stream test(Mega); 1.C open stream test(Mega); 2.Streaming on mega and kinect at the same time");
-    printf("Please enter the mode: ");
-    std::cin >> mode;
-    switch (mode)
-    {
+  }
+  printf("3 test modes: ");
+  printf("0.C++ open stream test(Mega); 1.C open stream test(Mega); 2.Streaming on mega and kinect at the same time");
+  printf("Please enter the mode: ");
+  std::cin >> mode;
+  switch (mode) {
     case 0:
-        openAllStream();
-        break;
+      openAllStream();
+      break;
     case 1:
-        openAllStreamC();
-        break;
+      openAllStreamC();
+      break;
     case 2:
-        bothDeivceOpen();
-        break;
+      bothDeivceOpen();
+      break;
     default:
-        printf("The input pattern does not exist");
-        break;
-    }
+      printf("The input pattern does not exist");
+      break;
+  }
 
-    return 0;
+  return 0;
 }
