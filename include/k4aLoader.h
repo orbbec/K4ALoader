@@ -28,7 +28,7 @@ extern "C" {
     typedef struct K4aLoaderHandle
     {
         void* context;
-        uint32_t ref = 0;
+        uint32_t ref;
         // Gets the number of connected devices
         uint32_t(*k4a_device_get_installed_count)(void);
         // Sets and clears the callback function to receive debug messages from the Azure Kinect device.
@@ -253,7 +253,7 @@ extern "C" {
 
     K4ALOADER_EXTENSION_API k4a_runtime_handle* get_current_k4a_runtime_handle();
 
-    K4ALOADER_EXTENSION_API void switch_k4a_runtime_handle(const char* dll);
+    K4ALOADER_EXTENSION_API bool switch_k4a_runtime_handle(const char* dll);
 
 #ifdef __cplusplus
 }
