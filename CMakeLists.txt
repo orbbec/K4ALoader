@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 3.1.15)
-project(BuildDll)
+project(k4aLoader)
 
 set(CMAKE_CXX_STANDARD 11)
+
+add_executable(${PROJECT_NAME}
+    main.cpp
+)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
@@ -16,31 +20,29 @@ else()
 endif()
 
 set(common_sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/k4atypes.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/handle.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/dynlib.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/handle.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/k4atypes.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/k4a_export.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/k4a.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/k4loader/k4a.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/k4aLoader.h
-    k4aLoader.cpp
+    K4aLoader.cpp
 )
 
-add_library(k4aLoader SHARED
+target_sources(${PROJECT_NAME} PRIVATE
     ${common_sources}
     ${platform_sources}
 )
-add_definitions(-DK4ALOADER_EXPORTS)
 
 if(WIN32)
-    target_link_libraries(k4aLoader 
+    target_link_libraries(${PROJECT_NAME}
         kernel32
     )
 else()
-    target_link_libraries(k4aLoader 
+    target_link_libraries(${PROJECT_NAME}
         pthread
         dl
     )
 endif()
-
-install(TARGETS k4aLoader DESTINATION ${CMAKE_BINARY_DIR}/install/lib)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/k4aLoader.h DESTINATION ${CMAKE_BINARY_DIR}/install/include)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/k4atypes.h DESTINATION ${CMAKE_BINARY_DIR}/install/include)
