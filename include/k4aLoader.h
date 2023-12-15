@@ -256,6 +256,9 @@ extern "C" {
 	K4ALOADER_EXTENSION_API void k4aloader_free_runtime_handle(k4a_runtime_handle* kl_handle);
 	// Get the default k4a_runtime_handle of the currently loaded dynamic library.
 	K4ALOADER_EXTENSION_API k4a_runtime_handle* get_current_k4a_runtime_handle();
+	/* Release k4a_runtime_handle, calling this interface will reduce the reference count of the incoming handle by 1,
+	if it is reduced to 0 it will automatically call the k4aloader_free_runtime_handle interface to release the library connection.*/
+	K4ALOADER_EXTENSION_API void k4a_runtime_handle_release(k4a_runtime_handle* kl_handle);
 	// Toggle the default k4a_runtime_handle
 	K4ALOADER_EXTENSION_API bool switch_k4a_runtime_handle(const char* dll);
 

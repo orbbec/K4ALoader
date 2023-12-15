@@ -470,6 +470,7 @@ namespace k4a
 				if (instance == nullptr) {
 					throw error("The default k4a_runtime_handle is nullptr");
 				}
+				kl_handle = instance;
 			}
 			else
 			{
@@ -608,6 +609,7 @@ namespace k4a
 			}
 			if (kl_handle != nullptr)
 			{
+				kl_handle->ref--;
 				kl_handle = nullptr;
 			}
 		}
@@ -718,7 +720,7 @@ namespace k4a
 	 *
 	 * Provides member functions for k4a_calibration_t.
 	 */
-	class calibration : public k4a_calibration_t
+	class calibration
 	{
 	public:
 		calibration(k4a_runtime_handle* instance = nullptr) noexcept : kl_handle(instance) {
@@ -727,6 +729,7 @@ namespace k4a
 				if (instance == nullptr) {
 					throw error("The default k4a_runtime_handle is nullptr");
 				}
+				kl_handle = instance;
 			}
 			else
 			{
@@ -754,7 +757,7 @@ namespace k4a
 		{
 			k4a_float3_t target_point3d;
 			k4a_result_t result =
-				kl_handle->k4a_calibration_3d_to_3d(this, &source_point3d, source_camera, target_camera, &target_point3d);
+				kl_handle->k4a_calibration_3d_to_3d(&calibration_, &source_point3d, source_camera, target_camera, &target_point3d);
 
 			if (K4A_RESULT_SUCCEEDED != result)
 			{
@@ -779,7 +782,7 @@ namespace k4a
 		{
 			int valid = 0;
 			k4a_result_t result = kl_handle->k4a_calibration_2d_to_3d(
-				this, &source_point2d, source_depth, source_camera, target_camera, target_point3d, &valid);
+				&calibration_, &source_point2d, source_depth, source_camera, target_camera, target_point3d, &valid);
 
 			if (K4A_RESULT_SUCCEEDED != result)
 			{
@@ -802,7 +805,7 @@ namespace k4a
 		{
 			int valid = 0;
 			k4a_result_t result =
-				kl_handle->k4a_calibration_3d_to_2d(this, &source_point3d, source_camera, target_camera, target_point2d, &valid);
+				kl_handle->k4a_calibration_3d_to_2d(&calibration_, &source_point3d, source_camera, target_camera, target_point2d, &valid);
 
 			if (K4A_RESULT_SUCCEEDED != result)
 			{
@@ -827,7 +830,7 @@ namespace k4a
 		{
 			int valid = 0;
 			k4a_result_t result = kl_handle->k4a_calibration_2d_to_2d(
-				this, &source_point2d, source_depth, source_camera, target_camera, target_point2d, &valid);
+				&calibration_, &source_point2d, source_depth, source_camera, target_camera, target_point2d, &valid);
 
 			if (K4A_RESULT_SUCCEEDED != result)
 			{
@@ -849,7 +852,7 @@ namespace k4a
 		{
 			int valid = 0;
 			k4a_result_t result =
-				kl_handle->k4a_calibration_color_2d_to_depth_2d(this, &source_point2d, depth_image.handle(), target_point2d, &valid);
+				kl_handle->k4a_calibration_color_2d_to_depth_2d(&calibration_, &source_point2d, depth_image.handle(), target_point2d, &valid);
 
 			if (K4A_RESULT_SUCCEEDED != result)
 			{
@@ -877,7 +880,7 @@ namespace k4a
 				raw_calibration_size,
 				target_depth_mode,
 				target_color_resolution,
-				&calib);
+				&calib.calibration_);
 
 			if (K4A_RESULT_SUCCEEDED != result)
 			{
@@ -918,6 +921,7 @@ namespace k4a
 				target_color_resolution, instance);
 		}
 	public:
+		k4a_calibration_t calibration_;
 		k4a_runtime_handle* kl_handle;
 	};
 
@@ -946,6 +950,7 @@ namespace k4a
 				if (instance == nullptr) {
 					throw error("The default k4a_runtime_handle is nullptr");
 				}
+				kl_handle = instance;
 			}
 			else
 			{
@@ -1009,6 +1014,7 @@ namespace k4a
 		{
 			destroy();
 			return *this;
+			return *this;
 		}
 
 		transformation& operator=(const transformation&) = delete;
@@ -1024,7 +1030,8 @@ namespace k4a
 			}
 			if (kl_handle != nullptr)
 			{
-				m_handle = nullptr;
+				k4a_runtime_handle_release(kl_handle);
+				kl_handle = nullptr;
 			}
 		}
 
@@ -1298,7 +1305,7 @@ namespace k4a
 			}
 			if (kl_handle != nullptr)
 			{
-				kl_handle->ref--;
+				k4a_runtime_handle_release(kl_handle);
 				kl_handle = nullptr;
 			}
 		}
@@ -1509,7 +1516,7 @@ namespace k4a
 		calibration get_calibration(k4a_depth_mode_t depth_mode, k4a_color_resolution_t color_resolution) const
 		{
 			calibration calib;
-			k4a_result_t result = kl_handle->k4a_device_get_calibration(m_handle, depth_mode, color_resolution, &calib);
+			k4a_result_t result = kl_handle->k4a_device_get_calibration(m_handle, depth_mode, color_resolution, &calib.calibration_);
 			calib.kl_handle = kl_handle;
 
 			if (K4A_RESULT_SUCCEEDED != result)
@@ -1616,12 +1623,19 @@ namespace k4a
 		static uint32_t get_installed_count(k4a_runtime_handle* instance) noexcept
 		{
 			if (instance == nullptr) {
+				// Get default k4a_runtime_handle
 				instance = get_current_k4a_runtime_handle();
 				if (instance == nullptr) {
 					throw error("The default k4a_runtime_handle is nullptr");
 				}
 			}
-			return instance->k4a_device_get_installed_count();
+			int count = instance->k4a_device_get_installed_count();
+			if (instance == nullptr)
+			{
+				// release k4a_runtime_handle
+				k4a_runtime_handle_release(instance);
+			}
+			return count;
 		}
 
 	private:

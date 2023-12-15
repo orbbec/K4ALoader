@@ -34,79 +34,86 @@ void openAllStreamCPlus()
 			// 也可输入k4a_runtime_handle去打开设备
 			// You can also type k4a_runtime_handle to open the device.
 			// auto dev = k4a::device::open(kl_handle, 0);
-			k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
-			config.color_format = K4A_IMAGE_FORMAT_COLOR_MJPG;
-			config.color_resolution = K4A_COLOR_RESOLUTION_1080P;
-			config.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
-			config.camera_fps = K4A_FRAMES_PER_SECOND_30;
-
-			dev.start_cameras(&config);
-
-			while (captureFrameCount-- > 0)
+			if (dev)
 			{
-				auto res = dev.get_capture(&capture);
+				k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
+				config.color_format = K4A_IMAGE_FORMAT_COLOR_MJPG;
+				config.color_resolution = K4A_COLOR_RESOLUTION_1080P;
+				config.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
+				config.camera_fps = K4A_FRAMES_PER_SECOND_30;
 
-				if (res)
+				dev.start_cameras(&config);
+
+				while (captureFrameCount-- > 0)
 				{
-					printf("Capture");
+					auto res = dev.get_capture(&capture);
 
-					// color image
-					auto imageColor = capture.get_color_image();
-					if (imageColor)
+					if (res)
 					{
-						printf(" | Color res:%4dx%4d stride:%5d,dataSize:%d ",
-							imageColor.get_height_pixels(),
-							imageColor.get_width_pixels(),
-							imageColor.get_stride_bytes(),
-							(int)imageColor.get_size());
-						imageColor.reset();
-					}
-					else
-					{
-						printf(" | Color None                       ");
-					}
+						printf("Capture");
 
-					// IR16 image
-					auto imageIr = capture.get_color_image();
-					if (imageIr)
-					{
-						printf(" | Ir16 res:%4dx%4d stride:%5d ",
-							imageIr.get_height_pixels(),
-							imageIr.get_width_pixels(),
-							imageIr.get_stride_bytes(),
-							(int)imageIr.get_size());
-						imageIr.reset();
-					}
-					else
-					{
-						printf(" | Ir16 None                      ");
-					}
+						// color image
+						auto imageColor = capture.get_color_image();
+						if (imageColor)
+						{
+							printf(" | Color res:%4dx%4d stride:%5d,dataSize:%d ",
+								imageColor.get_height_pixels(),
+								imageColor.get_width_pixels(),
+								imageColor.get_stride_bytes(),
+								(int)imageColor.get_size());
+							imageColor.reset();
+						}
+						else
+						{
+							printf(" | Color None                       ");
+						}
 
-					// depth16 image
-					auto imageDepth = capture.get_color_image();
-					if (imageDepth)
-					{
-						printf(" | Depth16 res:%4dx%4d stride:%5d\n",
-							imageDepth.get_height_pixels(),
-							imageDepth.get_width_pixels(),
-							imageDepth.get_stride_bytes(),
-							(int)imageDepth.get_size());
-						imageDepth.reset();
-					}
-					else
-					{
-						printf(" | Depth16 None\n");
-					}
+						// IR16 image
+						auto imageIr = capture.get_color_image();
+						if (imageIr)
+						{
+							printf(" | Ir16 res:%4dx%4d stride:%5d ",
+								imageIr.get_height_pixels(),
+								imageIr.get_width_pixels(),
+								imageIr.get_stride_bytes(),
+								(int)imageIr.get_size());
+							imageIr.reset();
+						}
+						else
+						{
+							printf(" | Ir16 None                      ");
+						}
 
-					// release capture
-					capture.reset();
-					fflush(stdout);
+						// depth16 image
+						auto imageDepth = capture.get_color_image();
+						if (imageDepth)
+						{
+							printf(" | Depth16 res:%4dx%4d stride:%5d\n",
+								imageDepth.get_height_pixels(),
+								imageDepth.get_width_pixels(),
+								imageDepth.get_stride_bytes(),
+								(int)imageDepth.get_size());
+							imageDepth.reset();
+						}
+						else
+						{
+							printf(" | Depth16 None\n");
+						}
+
+						// release capture
+						capture.reset();
+						fflush(stdout);
+					}
 				}
+
 			}
 			// 关闭设备连接, 同时会对使用的k4a_runtime_handle的引用计数减1
 			// Closes the device connection and decrements the reference count of k4a_runtime_handle by 1.
-			dev.stop_cameras();
-			dev.close();
+			if (dev)
+			{
+				dev.stop_cameras();
+				dev.close();
+			}
 		}
 		// 释放动态库连接, 需注意只有当k4a_runtime_handle引用计数为0时才会被彻底释放掉
 		// Release the dynamic library link, note that it will only be completely released when the k4a_runtime_handle reference count is zero.

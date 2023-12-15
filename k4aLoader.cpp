@@ -423,10 +423,18 @@ void k4aloader_free_runtime_handle(k4a_runtime_handle* kl_handle)
 				}
 				free(kl_handle);
 				kl_handle = NULL;
+				free(map_default_key);
 				map_default_key = NULL;
-				if (created_runtime_handle_map.size() > 0)
+				if (created_runtime_handle_map.size() - 1 > 0)
 				{
 					assignIfNotEqual(&map_default_key, created_runtime_handle_map.begin()->first);
+					created_runtime_handle_map.erase(it->first);
+					break;
+				}
+				else
+				{
+					created_runtime_handle_map.erase(it->first);
+					break;
 				}
 			}
 			else
@@ -448,6 +456,21 @@ k4a_runtime_handle* get_current_k4a_runtime_handle()
 		}
 	}
 	return nullptr;
+}
+
+void k4a_runtime_handle_release(k4a_runtime_handle* kl_handle)
+{
+	if (kl_handle != NULL)
+	{
+		if ((kl_handle->ref - 1) == 0)
+		{
+			k4aloader_free_runtime_handle(kl_handle);
+		}
+		else
+		{
+			kl_handle->ref--;
+		}
+	}
 }
 
 bool switch_k4a_runtime_handle(const char* dll)
