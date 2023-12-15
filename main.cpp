@@ -5,6 +5,7 @@
 #include <memory>
 #include <k4loader/k4a.hpp>
 
+// 注意：测试前请先修改动态库加载路径！！！
 int captureFrameCount;
 int mode;
 // C++接口开流
@@ -247,8 +248,7 @@ void bothDeivceOpen()
         printf("AKDKDeviceCount: %d\n", countAK);
 
         if (countWR > 0 && countAK > 0) {
-            // 下面为隐士调用k4aLoader中的get_current_k4a_runtime_handle拿去当前默认的k4a_runtime_handle打开k4a设备
-            // 默认的k4a_runtime_handle可调用k4aLoader中的switch_k4a_runtime_handle函数进行切换 
+            // 传入k4a_runtime_handle打开设备
             auto warDevice = k4a::device::open(0, klHandleWR);
             auto akDevice = k4a::device::open(0, klHandleAK);
             // 也可显示输入k4a_runtime_handle进行device k4a设备打开
