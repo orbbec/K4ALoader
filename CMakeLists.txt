@@ -11,6 +11,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 if(WIN32)
     set(platform_sources
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/k4a_export.h
         dynlib_windows.c
     )
 else()
@@ -24,11 +25,10 @@ set(common_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/include/dynlib.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/handle.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/k4atypes.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/k4a_export.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/k4a.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/k4loader/k4a.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/k4aloader/k4a.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/k4aLoader.h
-    K4aLoader.cpp
+    k4aLoader.cpp
 )
 
 target_sources(${PROJECT_NAME} PRIVATE
