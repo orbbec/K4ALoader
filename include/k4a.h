@@ -14,8 +14,12 @@
 #endif
 //#include <k4a/k4aversion.h>
 #include "k4atypes.h"
+#if(defined WIN32 || defined _WIN32 || defined WINCE)
 #include "k4a_export.h"
-
+#else
+#define K4A_EXPORT
+#define K4A_DEPRECATED_EXPORT
+#endif
 #ifdef __cplusplus
 extern "C" {
 #endif
