@@ -20,73 +20,81 @@ void openAllStream() {
     printf("deviceCount: %d\n", count);
 
     if (count > 0) {
-      // 下面为隐士调用k4aLoader中的get_current_k4a_runtime_handle拿去当前默认的k4a_runtime_handle打开k4a设备
+      // 下面为隐士调用k4aLoader中的get_current_k4a_runtime_handle去获取当前默认的k4a_runtime_handle打开k4a设备
       // 默认的k4a_runtime_handle可调用k4aLoader中的switch_k4a_runtime_handle函数进行切换
       auto dev = k4a::device::open(0);
-      // 也可显示输入k4a_runtime_handle进行device k4a设备打开
+      // 也可输入k4a_runtime_handle去打开设备
+      // You can also type k4a_runtime_handle to open the device.
       // auto dev = k4a::device::open(kl_handle, 0);
+      if (dev) {
+        k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
+        config.color_format = K4A_IMAGE_FORMAT_COLOR_MJPG;
+        config.color_resolution = K4A_COLOR_RESOLUTION_1080P;
+        config.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
+        config.camera_fps = K4A_FRAMES_PER_SECOND_30;
 
-      k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
-      config.color_format = K4A_IMAGE_FORMAT_COLOR_MJPG;
-      config.color_resolution = K4A_COLOR_RESOLUTION_1080P;
-      config.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
-      config.camera_fps = K4A_FRAMES_PER_SECOND_30;
-      dev.start_cameras(&config);
+        dev.start_cameras(&config);
 
-      while (captureFrameCount-- > 0) {
-        auto res = dev.get_capture(&capture);
+        while (captureFrameCount-- > 0) {
+          auto res = dev.get_capture(&capture);
 
-        if (res) {
-          printf("Capture");
+          if (res) {
+            printf("Capture");
 
-          // color image
-          auto imageColor = capture.get_color_image();
-          if (imageColor) {
-            printf(" | Color res:%4dx%4d stride:%5d,dataSize:%d ",
-                   imageColor.get_height_pixels(),
-                   imageColor.get_width_pixels(),
-                   imageColor.get_stride_bytes(),
-                   (int)imageColor.get_size());
-            imageColor.reset();
-          } else {
-            printf(" | Color None                       ");
+            // color image
+            auto imageColor = capture.get_color_image();
+            if (imageColor) {
+              printf(" | Color res:%4dx%4d stride:%5d,dataSize:%d ",
+                     imageColor.get_height_pixels(),
+                     imageColor.get_width_pixels(),
+                     imageColor.get_stride_bytes(),
+                     (int)imageColor.get_size());
+              imageColor.reset();
+            } else {
+              printf(" | Color None                       ");
+            }
+
+            // IR16 image
+            auto imageIr = capture.get_color_image();
+            if (imageIr) {
+              printf(" | Ir16 res:%4dx%4d stride:%5d ",
+                     imageIr.get_height_pixels(),
+                     imageIr.get_width_pixels(),
+                     imageIr.get_stride_bytes(),
+                     (int)imageIr.get_size());
+              imageIr.reset();
+            } else {
+              printf(" | Ir16 None                      ");
+            }
+
+            // depth16 image
+            auto imageDepth = capture.get_color_image();
+            if (imageDepth) {
+              printf(" | Depth16 res:%4dx%4d stride:%5d\n",
+                     imageDepth.get_height_pixels(),
+                     imageDepth.get_width_pixels(),
+                     imageDepth.get_stride_bytes(),
+                     (int)imageDepth.get_size());
+              imageDepth.reset();
+            } else {
+              printf(" | Depth16 None\n");
+            }
+
+            // release capture
+            capture.reset();
+            fflush(stdout);
           }
-
-          // IR16 image
-          auto imageIr = capture.get_color_image();
-          if (imageIr) {
-            printf(" | Ir16 res:%4dx%4d stride:%5d ",
-                   imageIr.get_height_pixels(),
-                   imageIr.get_width_pixels(),
-                   imageIr.get_stride_bytes(),
-                   (int)imageIr.get_size());
-            imageIr.reset();
-          } else {
-            printf(" | Ir16 None                      ");
-          }
-
-          // depth16 image
-          auto imageDepth = capture.get_color_image();
-          if (imageDepth) {
-            printf(" | Depth16 res:%4dx%4d stride:%5d\n",
-                   imageDepth.get_height_pixels(),
-                   imageDepth.get_width_pixels(),
-                   imageDepth.get_stride_bytes(),
-                   (int)imageDepth.get_size());
-            imageDepth.reset();
-          } else {
-            printf(" | Depth16 None\n");
-          }
-
-          // release capture
-          capture.reset();
-          fflush(stdout);
         }
       }
       // 关闭设备连接, 同时会对使用的k4a_runtime_handle的引用计数减1
-      dev.close();
+      // Closes the device connection and decrements the reference count of k4a_runtime_handle by 1.
+      if (dev) {
+        dev.stop_cameras();
+        dev.close();
+      }
     }
     // 释放动态库连接, 需注意只有当k4a_runtime_handle引用计数为0时才会被彻底释放掉
+    // Release the dynamic library link, note that it will only be completely released when the k4a_runtime_handle reference count is zero.
     k4aloader_free_runtime_handle(klHandle);
   } else {
     printf("Failed to load this.\n");
