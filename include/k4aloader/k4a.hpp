@@ -94,8 +94,17 @@ namespace k4a
 		 */
 		image(k4a_image_t handle = nullptr, k4a_runtime_handle* instance = nullptr) noexcept : m_handle(handle), kl_handle(instance)
 		{
-			VALIDATE_K4ALOADER_HANDLE_NOT_NULL(kl_handle);
-			kl_handle->ref++;
+			if (instance == nullptr) {
+				instance = get_current_k4a_runtime_handle();
+				if (instance == nullptr) {
+					throw error("The default k4a_runtime_handle is nullptr");
+				}
+				kl_handle = instance;
+			}
+			else
+			{
+				kl_handle->ref++;
+			}
 		}
 
 		/** Creates a shallow copy of another image
@@ -746,6 +755,15 @@ namespace k4a
 			}
 		}
 
+		void reset() noexcept
+		{
+			if (kl_handle != nullptr)
+			{
+				kl_handle->ref--;
+				kl_handle = nullptr;
+			}
+		}
+
 		/** Transform a 3d point of a source coordinate system into a 3d point of the target coordinate system.
 		 * Throws error on failure.
 		 *
@@ -881,6 +899,8 @@ namespace k4a
 				target_depth_mode,
 				target_color_resolution,
 				&calib.calibration_);
+			calib.kl_handle = instance;
+			calib.kl_handle->ref++;
 
 			if (K4A_RESULT_SUCCEEDED != result)
 			{
@@ -911,9 +931,9 @@ namespace k4a
 		 *
 		 * \sa k4a_calibration_get_from_raw
 		 */
-		static calibration get_from_raw(k4a_runtime_handle* instance, std::vector<uint8_t>& raw_calibration,
+		static calibration get_from_raw(std::vector<uint8_t>& raw_calibration,
 			k4a_depth_mode_t target_depth_mode,
-			k4a_color_resolution_t target_color_resolution)
+			k4a_color_resolution_t target_color_resolution, k4a_runtime_handle* instance)
 		{
 			return get_from_raw(reinterpret_cast<char*>(raw_calibration.data()),
 				raw_calibration.size(),
@@ -938,7 +958,6 @@ namespace k4a
 		 * \sa k4a_transformation_create
 		 */
 		transformation(const k4a_calibration_t& calibration, k4a_runtime_handle* instance = nullptr) noexcept :
-			m_handle(k4a_transformation_create(&calibration)),
 			m_color_resolution({ calibration.color_camera_calibration.resolution_width,
 								 calibration.color_camera_calibration.resolution_height }),
 			m_depth_resolution({ calibration.depth_camera_calibration.resolution_width,
@@ -956,6 +975,7 @@ namespace k4a
 			{
 				kl_handle->ref++;
 			}
+			m_handle = kl_handle->k4a_transformation_create(&calibration);
 		}
 
 		/** Creates a transformation from a k4a_transformation_t
@@ -965,9 +985,16 @@ namespace k4a
 		 */
 		transformation(k4a_transformation_t handle = nullptr, k4a_runtime_handle* instance = nullptr) noexcept : m_handle(handle), kl_handle(instance)
 		{
-			if (kl_handle == nullptr)
+			if (instance == nullptr) {
+				instance = get_current_k4a_runtime_handle();
+				if (instance == nullptr) {
+					throw error("The default k4a_runtime_handle is nullptr");
+				}
+				kl_handle = instance;
+			}
+			else
 			{
-				throw error("k4a_runtime_instance is null.");
+				kl_handle->ref++;
 			}
 		}
 
@@ -1234,6 +1261,7 @@ namespace k4a
 		 */
 		device(k4a_device_t handle = nullptr, k4a_runtime_handle* instance = nullptr) noexcept : m_handle(handle), kl_handle(instance) {
 			VALIDATE_K4ALOADER_HANDLE_NOT_NULL(kl_handle);
+			kl_handle->ref++;
 		}
 
 		/** Moves another device into a new device
@@ -1518,6 +1546,7 @@ namespace k4a
 			calibration calib;
 			k4a_result_t result = kl_handle->k4a_device_get_calibration(m_handle, depth_mode, color_resolution, &calib.calibration_);
 			calib.kl_handle = kl_handle;
+			calib.kl_handle->ref++;
 
 			if (K4A_RESULT_SUCCEEDED != result)
 			{
@@ -1603,6 +1632,7 @@ namespace k4a
 			k4a_device_t handle = nullptr;
 			if (instance == nullptr) {
 				instance = get_current_k4a_runtime_handle();
+				instance->ref--;
 				if (instance == nullptr) {
 					throw error("The default k4a_runtime_handle is nullptr");
 				}
@@ -1629,12 +1659,11 @@ namespace k4a
 					throw error("The default k4a_runtime_handle is nullptr");
 				}
 			}
+
 			int count = instance->k4a_device_get_installed_count();
-			if (instance == nullptr)
-			{
-				// release k4a_runtime_handle
-				k4a_runtime_handle_release(instance);
-			}
+
+			k4a_runtime_handle_release(instance);
+
 			return count;
 		}
 
